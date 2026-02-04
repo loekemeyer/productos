@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Loekemeyer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" type="image/jpeg" href="img/favicon.png">
+  <link rel="icon" href="img/favicon.png">
+  <link rel="shortcut icon" href="img/favicon.png">
+</head>
+
+<body>
+<header class="header">
+  <div class="logo">
+    <img src="img/logo.png" alt="Loekemeyer" class="logo-img">
+  </div>
+
+  <div class="header-center" id="headerCenter"></div>
+
+  <nav class="nav">
+
+    <!-- CENTRO: Categorías / Productos / Pedido -->
+    <div class="nav-center">
+
+  <!-- BUSCADOR NAV -->
+  <input
+    id="navSearch"
+    class="nav-search"
+    type="search"
+    placeholder="Buscar…"
+    autocomplete="off"
+  />
+
+  <div class="dropdown-wrap">
+    <a id="categoriesBtn">Categorías ▾</a>
+    <div id="categoriesMenu" class="dropdown-menu"></div>
+  </div>
+
+      <a onclick="goToProductsTop()">Productos</a>
+
+      <a id="cartLink" onclick="showSection('carrito')">
+        <img id="cartIcon" class="cart-icon" src="img/cart-icon.webp" alt="Carrito">
+        Pedido (<span id="cartCount">0</span>)
+      </a>
+    </div>
+
+    <!-- DERECHA: login o user box -->
+    <button id="hamburgerBtn" class="hamburger" type="button" aria-label="Menú" aria-expanded="false">
+      ☰
+      </button>
+
+    <div id="mobileMenu" class="mobile-menu" aria-hidden="true">
+      <button class="mobile-item" type="button" onclick="toggleCategoriesMenu()">Categorías</button>
+      <button class="mobile-item" type="button" onclick="goToProductsTop()">Productos</button>
+      <button class="mobile-item" type="button" onclick="showSection('carrito')">Pedido</button>
+
+    <div class="mobile-sep"></div>
+
+    <button id="mobileLogin" class="mobile-item" type="button" onclick="openLogin()">Iniciar sesión</button>
+    <button id="mobileMyOrders" class="mobile-item" type="button" onclick="openMyOrders()">Mis pedidos</button>
+    <button id="mobileLogout" class="mobile-item danger" type="button" onclick="logout()">Cerrar sesión</button>
+    </div>
+
+    <div class="nav-right">
+      <a id="loginBtn" onclick="openLogin()">Iniciar sesión</a>
+
+      <div class="user-box" id="userBox" style="display:none;">
+        <button id="helloNavBtn" class="hello-nav-btn" type="button">Hola!</button>
+        <button id="profileBtn" class="profile-btn" type="button" aria-label="Perfil">
+          <img src="img/profile.jpg" alt="Perfil" class="profile-avatar">
+        </button>
+
+        <div class="user-menu" id="userMenu" aria-hidden="true">
+          <button id="menuMyOrders" class="user-menu-item" type="button" onclick="openMyOrders()">Mis pedidos</button>
+          <button class="user-menu-item" type="button" onclick="logout()">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+
+  </nav>
+</header>
+
+<!-- PRODUCTOS -->
+<section id="productos" class="section active">
+  <div class="section-title-row">
+    <div class="hello" id="customerNote"></div>
+    <div class="title-spacer"></div>
+  </div>
+
+  <!-- LAYOUT: sidebar categorías + productos -->
+  <div class="products-layout">
+    <aside class="categories-sidebar" id="categoriesSidebar">
+      <div class="sidebar-title">Categorías</div>
+      <div id="categoriesSidebarList" class="sidebar-list"></div>
+    </aside>
+
+    <main class="products-main">
+      <div id="productsContainer"></div>
+    </main>
+  </div>
+</section>
+
+<!-- CARRITO -->
+<section id="carrito" class="section">
+  <h2 class="section-title">
+  Pedido · Total: $<span id="pedidoTotalHeader">0</span>
+</h2>
+
+<!-- OPCIÓN DE ENTREGA (obligatoria) -->
+<div class="ship-row">
+  <div class="ship-card">
+    <label class="ship-label" for="shippingSelect">Entrega</label>
+    <select id="shippingSelect" class="ship-select">
+      <option value="" selected>Elegir</option>
+      <option value="retira_devoto">Retira en Devoto</option>
+      <option value="envio_sucursal">Envío a Sucursal</option>
+    </select>
+    <div class="ship-hint">Seleccioná una opción para poder confirmar el pedido.</div>
+  </div>
+</div>
+
+
+  <!-- LAYOUT CARRITO: 2 columnas arriba -->
+  <div class="cart-layout">
+    <!-- Columna izquierda: método de pago -->
+    <aside class="pay-column">
+      <div class="pay-card">
+        <div class="pay-title">Método de pago</div>
+
+        <div class="payment-buttons" id="paymentButtons" aria-label="Método de pago">
+          <button type="button" class="pay-btn" data-value="0.25">
+            <div class="pay-name">Contado</div>
+            <div class="pay-off">25% Dto</div>
+          </button>
+
+          <button type="button" class="pay-btn" data-value="0.20">
+            <div class="pay-name">15–30 días</div>
+            <div class="pay-off">20% Dto</div>
+          </button>
+
+          <button type="button" class="pay-btn" data-value="0.15">
+            <div class="pay-name">30–45 días</div>
+            <div class="pay-off">15% Dto</div>
+          </button>
+
+          <button type="button" class="pay-btn" data-value="0.10">
+            <div class="pay-name">45–60 días</div>
+            <div class="pay-off">10% Dto</div>
+          </button>
+
+          <button type="button" class="pay-btn" data-value="0.05">
+            <div class="pay-name">90 días Echeq</div>
+            <div class="pay-off">5% Dto</div>
+          </button>
+
+          <button type="button" class="pay-btn" data-value="0.00">
+            <div class="pay-name">120 días Echeq</div>
+            <div class="pay-off">0% Dto</div>
+          </button>
+        </div>
+
+        <!-- Select oculto: se mantiene para que el JS siga funcionando -->
+        <select id="paymentSelect" onchange="updateCart()">
+          <option value="0.25">Pago Contado: 25% Dto</option>
+          <option value="0.20">Pago 15-30 días: 20% Dto</option>
+          <option value="0.15">Pago 30-45 días: 15% Dto</option>
+          <option value="0.10">Pago 45-60 días: 10% Dto</option>
+          <option value="0.05">Pago 90 días Echeq: 5% Dto</option>
+          <option value="0.00">Pago 120 días Echeq: 0% Dto</option>
+        </select>
+
+        <div class="web-note">
+          <div class="web-note-title">Dto Pedido Web</div>
+          <div class="web-note-value"><strong>2.5%</strong> (aplicado)</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Columna derecha: tabla del carrito -->
+    <main class="cart-column">
+      <div class="cart" id="cart"></div>
+    </main>
+  </div>
+
+  <!-- TOTALES: debajo ocupando todo el ancho -->
+  <div class="cart-total">
+  <div class="totals-inner">
+    <div class="totals-line">
+      <span>Subtotal (Tu Precio):</span>
+      <strong>$<span id="subtotal">0</span></strong>
+    </div>
+    <div class="totals-line">
+      <span>Dto Pedido Web (2.5%):</span>
+      <strong>− $<span id="webDiscountValue">0</span></strong>
+    </div>
+    <div class="totals-line">
+      <span>Dto por método de pago: <span id="paymentDiscountPercent">0%</span></span>
+      <strong>− $<span id="paymentDiscountValue">0</span></strong>
+    </div>
+
+    <h3 class="grand-total">Total del pedido: $<span id="total">0</span></h3>
+
+    <div class="totals-divider"></div>
+
+    <div class="totals-line">
+      <span>Pedido sin descuentos (Precio Lista):</span>
+      <strong>$<span id="totalNoDiscount">0</span></strong>
+    </div>
+    <div class="totals-line">
+      <span>Total descuentos aplicados:</span>
+      <strong>− $<span id="totalDiscounts">0</span></strong>
+    </div>
+  </div>
+</div>
+
+
+  <!-- ACCIONES -->
+  <div class="order-actions">
+  <button class="back back-outline" onclick="showSection('productos')">
+    Seguir agregando productos
+  </button>
+
+  <div id="orderStatus" class="order-status" aria-live="polite"></div>
+
+  <button id="submitOrderBtn" class="submit-order" onclick="submitOrder()">
+    Confirmar pedido
+  </button>
+</div>
+
+</section>
+
+<footer class="footer">
+  ventas@loekemeyer.com · Cervantes 2868
+</footer>
+
+<!-- MODAL LOGIN -->
+<div class="modal" id="loginModal" aria-hidden="true">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Iniciar sesión</h3>
+      <button class="modal-close" onclick="closeLogin()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <label>CUIT</label>
+      <input id="cuitInput" type="text" placeholder="Ej: 30-71030536-2">
+
+      <label>Contraseña</label>
+      <input id="passInput" type="password" placeholder="Contraseña">
+
+      <div class="modal-error" id="loginError" style="display:none;"></div>
+
+      <button class="modal-submit" onclick="login()">Ingresar</button>
+      <p class="modal-hint">Los precios se muestran solo luego de iniciar sesión.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Tu JS -->
+<script src="script.js"></script>
+</body>
+</html>
