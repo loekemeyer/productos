@@ -65,6 +65,8 @@ const cart = [];              // [{ productId: uuidString, qtyCajas }]
 // Entrega desde DB (slots 1..25)
 let deliveryChoice = { slot: '', label: '' };
 
+let sortMode = 'category'; // category | bestsellers | price_desc | price_asc
+
 // Filtros UI
 let filterAll = true;                 // "Todos" ON por default
 let filterCats = new Set();           // acumulativo
@@ -199,6 +201,10 @@ async function login() {
 
   currentSession = data.session || null;
   closeLogin();
+  // ✅ limpiar búsqueda para que no filtre todo al loguear
+  searchTerm = '';
+  const ns = document.getElementById('navSearch');
+  if (ns) ns.value = '';
   await refreshAuthState();
   await loadProductsFromDB();
   renderCategoriesMenu();
@@ -322,10 +328,17 @@ async function refreshAuthState() {
 
   if ($('menuMyOrders')) $('menuMyOrders').style.display = isAdmin ? 'none' : 'block';
 
-  if ($('customerNote')) {
-    if (isAdmin) $('customerNote').innerText = 'Modo Administrador';
-    else $('customerNote').innerText = 'Ya está aplicado tu Dto x Volumen';
+  // Texto informativo alineado a la derecha (en el body)
+const note = $('customerNote');
+if (note) {
+  if (!currentSession) {
+    note.innerText = '';
+  } else if (isAdmin) {
+    note.innerText = 'Modo Administrador';
+  } else {
+    note.innerText = 'Ya está aplicado tu Dto x Volumen';
   }
+}
 
   await loadDeliveryOptions();
 }
@@ -390,17 +403,17 @@ async function loadProductsFromDB() {
     }
 
     products = (data || []).map(p => ({
-      id: p.id,
-      cod: p.cod,
-      category: p.category || 'Sin categoría',
-      subcategory: p.subcategory || null,
-      ranking: Number(p.ranking ?? 999999),
-      description: p.description,
-      list_price: null,
-      uxb: p.uxb,
-      images: Array.isArray(p.images) ? p.images : [],
-      active: !!p.active
+    id: p.id,
+    cod: p.cod,
+    category: p.category || 'Sin categoría',
+    subcategory: p.subcategory,     // ✅ nuevo
+    ranking: p.ranking,             // ✅ nuevo
+    description: p.description,
+    list_price: null,
+    uxb: p.uxb,
+    images: Array.isArray(p.images) ? p.images : []
     }));
+
     return;
   }
 
@@ -409,8 +422,9 @@ async function loadProductsFromDB() {
     .select('id,cod,category,subcategory,ranking,description,list_price,uxb,images,active')
     .eq('active', true)
     .order('category', { ascending: true })
-    .order('ranking', { ascending: true })
+    .order('orden_catalogo', { ascending: true, nullsFirst: false })
     .order('description', { ascending: true });
+
 
   if (error) {
     console.error('Error loading products:', error);
@@ -419,17 +433,20 @@ async function loadProductsFromDB() {
   }
 
   products = (data || []).map(p => ({
-    id: p.id,
-    cod: p.cod,
-    category: p.category || 'Sin categoría',
-    subcategory: p.subcategory || null,
-    ranking: Number(p.ranking ?? 999999),
-    description: p.description,
-    list_price: p.list_price,
-    uxb: p.uxb,
-    images: Array.isArray(p.images) ? p.images : [],
-    active: !!p.active
-  }));
+  id: p.id,
+  cod: p.cod,
+  category: p.category || 'Sin categoría',
+  subcategory: (p.subcategory && String(p.subcategory).trim()) ? String(p.subcategory).trim() : null,
+
+  // ✅ clave: NO convertir null a 999999 (dejalo null para poder mostrar NUEVO)
+  ranking: (p.ranking === null || p.ranking === undefined || p.ranking === '') ? null : Number(p.ranking),
+
+  description: p.description,
+  list_price: p.list_price,
+  uxb: p.uxb,
+  images: Array.isArray(p.images) ? p.images : [],
+  active: !!p.active
+}));
 }
 
 /***********************
@@ -451,6 +468,46 @@ function slugifyCategory(text) {
     .trim()
     .replace(/\s+/g, '-')
     .replace(/[^\w\-]/g, '');
+}
+
+function normalizeText(str) {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')              // separa letras y acentos
+    .replace(/[\u0300-\u036f]/g, '') // elimina acentos
+    .trim();
+}
+
+function getSortComparator() {
+  return (a, b) => {
+    const aOrd = (a.orden_catalogo === null || a.orden_catalogo === undefined) ? 999999 : Number(a.orden_catalogo);
+    const bOrd = (b.orden_catalogo === null || b.orden_catalogo === undefined) ? 999999 : Number(b.orden_catalogo);
+
+    const aRank = (a.ranking === null || a.ranking === undefined) ? 999999 : Number(a.ranking);
+    const bRank = (b.ranking === null || b.ranking === undefined) ? 999999 : Number(b.ranking);
+
+    const aPrice = (a.list_price === null || a.list_price === undefined) ? -1 : Number(a.list_price);
+    const bPrice = (b.list_price === null || b.list_price === undefined) ? -1 : Number(b.list_price);
+
+    if (sortMode === 'bestsellers') {
+      return (aRank - bRank) || (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
+    }
+
+    if (sortMode === 'price_desc') {
+      // si no hay precio (no logueado) cae al final
+      return (bPrice - aPrice) || (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
+    }
+
+    if (sortMode === 'price_asc') {
+      // precios sin datos caen al final
+      const aP = aPrice < 0 ? 999999999 : aPrice;
+      const bP = bPrice < 0 ? 999999999 : bPrice;
+      return (aP - bP) || (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
+    }
+
+    // default: category (tu orden_catalogo manda)
+    return (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
+  };
 }
 
 /***********************
@@ -532,27 +589,7 @@ function renderCategoriesSidebar() {
   const ordered = getOrderedCategoriesFrom(products);
 
   list.innerHTML = `
-    <!-- BUSCADOR en el sidebar -->
-    <div style="margin-bottom:10px;">
-      <input
-        id="sidebarSearch"
-        type="search"
-        placeholder="Buscar productos…"
-        value="${String(searchTerm || '').replace(/"/g, '&quot;')}"
-        style="
-          width:100%;
-          height:34px;
-          border-radius:10px;
-          border:1px solid #ddd;
-          background:#fff;
-          color:#111;
-          padding:0 10px;
-          outline:none;
-          font-size:13px;
-        "
-      />
-    </div>
-
+    
     <label class="toggle-row ${filterAll ? 'active' : ''}">
       <span class="toggle-text">Todos los artículos</span>
       <input type="checkbox" id="toggleAll" ${filterAll ? 'checked' : ''}>
@@ -569,17 +606,6 @@ function renderCategoriesSidebar() {
       </label>
     `).join('')}
   `;
-
-  // Buscar (global): al tipear, filtra productos
-  const s = $('sidebarSearch');
-  if (s) {
-    s.addEventListener('input', () => {
-      searchTerm = String(s.value || '').trim();
-      renderProducts();
-      // opcional: si querés que el dropdown también refleje el estado, descomentá:
-      // renderCategoriesMenu();
-    });
-  }
 
   // Toggles (igual que antes)
   const all = $('toggleAll');
@@ -704,17 +730,30 @@ function matchesSearch(p, term) {
 function getFilteredProducts() {
   // 1) Si hay búsqueda: GLOBAL (ignora toggles)
   if (searchTerm && String(searchTerm).trim()) {
-    const term = String(searchTerm).trim().toLowerCase();
-    return products.filter(p => {
-      const hay = [
-        p.cod,
-        p.description,
-        p.category,
-        p.subcategory
-      ].map(x => String(x || '').toLowerCase()).join(' ');
-      return hay.includes(term);
-    });
-  }
+  const term = String(searchTerm)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // saca tildes
+    .trim();
+
+  return products.filter(p => {
+    const hay = [
+      p.cod,
+      p.description,
+      p.category,
+      p.subcategory
+    ]
+      .map(x =>
+        String(x || '')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+      )
+      .join(' ');
+
+    return hay.includes(term);
+  });
+}
 
   // 2) Sin búsqueda: respeta toggles
   let list = products.slice();
@@ -734,7 +773,7 @@ function renderProducts() {
   if (!container) return;
 
   container.innerHTML = '';
-
+    
   const logged = !!currentSession;
 
   // base filtrada (por toggles + search)
@@ -744,55 +783,104 @@ function renderProducts() {
   const orderedCategories = getOrderedCategoriesFrom(filtered);
 
   const buildCard = (p) => {
-    const pid = String(p.id);
-    const codSafe = String(p.cod || '').trim();
-    const imgSrc = `${BASE_IMG}${encodeURIComponent(codSafe)}.jpg?v=${IMG_VERSION}`;
-    const imgFallback = `https://picsum.photos/300?random=${encodeURIComponent(codSafe || '0')}`;
-    const tuPrecio = logged ? unitYourPrice(p.list_price) : 0;
+  const pid = String(p.id);
+  const codSafe = String(p.cod || '').trim();
+  const imgSrc = `${BASE_IMG}${encodeURIComponent(codSafe)}.jpg?v=${IMG_VERSION}`;
+  const imgFallback = "img/no-image.jpg";
+  const tuPrecio = logged ? unitYourPrice(p.list_price) : 0;
+  const isNuevo = p.ranking == null;
 
-    return `
-      <div class="product-card" id="card-${pid}">
-        <img id="img-${pid}"
-             src="${imgSrc}"
-             alt="${String(p.description || '')}"
-             onerror="this.onerror=null;this.src='${imgFallback}'">
+  const inCart = cart.find(i => String(i.productId) === String(pid));
+  const qty = inCart ? Number(inCart.qtyCajas || 0) : 0;
+  const totalUni = qty * Number(p.uxb || 0);
+  
+  return `
+    <div class="product-card" id="card-${pid}">
+      ${isNuevo ? `<div class="badge-nuevo">NUEVO</div>` : ``}
+      <img id="img-${pid}"
+           src="${imgSrc}"
+           alt="${String(p.description || '')}"
+           onerror="this.onerror=null;this.src='${imgFallback}'">
 
-        <div class="product-info">
-          <div class="product-name">${String(p.description || '')}</div>
-          Cod: <span>${codSafe}</span><br>
+      <div class="product-info">
+        <div class="product-cod">Cod: <span>${codSafe}</span></div>
+        <div class="product-name">${String(p.description || '')}</div>
 
 
-          <div class="${logged ? '' : 'price-hidden'}">
-            Precio Lista: <span>$${formatMoney(p.list_price)}</span><br>
-            Tu Precio: <span>$${formatMoney(tuPrecio)}</span><br>
-            UxB: <span>${p.uxb}</span>
-          </div>
-
-          <div class="${logged ? 'price-hidden' : ''}">
-            <div class="price-locked">Inicia sesión para ver precios</div>
-            UxB: <span>${p.uxb}</span>
-          </div>
+        <div class="${logged ? '' : 'price-hidden'}">
+          Precio Lista: <span>$${formatMoney(p.list_price)}</span><br>
+          Tu Precio: <span>$${formatMoney(tuPrecio)}</span><br>
+          UxB: <span>${p.uxb}</span>
         </div>
 
+        <div class="${logged ? 'price-hidden' : ''}">
+          <div class="price-locked">Inicia sesión para ver precios</div>
+          UxB: <span>${p.uxb}</span>
+        </div>
+      </div>
+
+      ${qty <= 0 ? `
         <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
           Agregar al pedido
         </button>
+      ` : `
+        <div class="qty-panel" id="qty-${pid}">
+          <div class="qty-row">
+            <span class="qty-label">Cajas</span>
 
-        <div class="qty-wrapper" id="qty-${pid}">
-          <div class="qty-controls">
-            <button type="button" onclick="changeQty('${pid}', -1)">−</button>
-            <input type="number" value="1" min="1" onchange="manualQty('${pid}', this.value)">
-            <button type="button" onclick="changeQty('${pid}', 1)">+</button>
+            <div class="qty-stepper">
+              <button type="button" class="qty-btn" onclick="changeQty('${pid}', -1)">−</button>
+              <input class="qty-input" type="number" min="1" step="1" value="${qty}"
+                     inputmode="numeric"
+                     onchange="manualQty('${pid}', this.value)">
+              <button type="button" class="qty-btn" onclick="changeQty('${pid}', 1)">+</button>
+            </div>
           </div>
 
-          <div class="quick-buttons">
-            <button type="button" onclick="changeQty('${pid}', 5)">+5</button>
-            <button type="button" onclick="changeQty('${pid}', 10)">+10</button>
+          <div class="qty-meta">
+            <span>UxB: <strong>${p.uxb}</strong></span>
+            <span>Unidades: <strong>${formatMoney(totalUni)}</strong></span>
+          </div>
+
+          <div class="qty-chips">
+            <button type="button" class="chip" onclick="changeQty('${pid}', 5)">+5</button>
+            <button type="button" class="chip" onclick="changeQty('${pid}', 10)">+10</button>
+          </div>
+
+<div class="qty-actions">
+            <button type="button" class="go-cart-btn" onclick="showSection('carrito')">
+              Ver pedido (${qty})
+            </button>
+
+            <button type="button" class="remove-btn" onclick="removeItem('${pid}')">
+              Quitar
+            </button>
           </div>
         </div>
-      </div>
-    `;
-  };
+      `}
+    </div>
+  `;
+};
+
+// 🔥 SOLO en "Más vendidos": vista global sin categorías
+if (sortMode === 'bestsellers') {
+  const list = products; // búsqueda global: ignora toggles
+
+  const items = [...list].sort((a, b) => {
+    const ar = (a.ranking === null || a.ranking === undefined) ? 999999 : Number(a.ranking);
+    const br = (b.ranking === null || b.ranking === undefined) ? 999999 : Number(b.ranking);
+
+    return (ar - br) ||
+      String(a.description || '').localeCompare(String(b.description || ''), 'es');
+  });
+
+  container.innerHTML = `
+    <div class="products-grid">
+      ${items.map(buildCard).join('')}
+    </div>
+  `;
+  return;
+}
 
   // Render categorías
   orderedCategories.forEach(category => {
@@ -800,9 +888,9 @@ function renderProducts() {
     block.className = 'category-block';
     const catId = `cat-${slugifyCategory(category)}`;
 
-    const items = filtered
-      .filter(p => String(p.category || '').trim() === category)
-      .sort((a, b) => (a.ranking ?? 999999) - (b.ranking ?? 999999));
+    const items = products
+  .filter(p => p.category === category)
+  .sort(getSortComparator());
 
     if (!items.length) return;
 
@@ -930,6 +1018,7 @@ function addFirstBox(productId) {
     toggleControls(productId, true);
   }
   updateCart();
+  renderProducts();
 }
 
 function changeQty(productId, delta) {
@@ -943,6 +1032,7 @@ function changeQty(productId, delta) {
   if (input) input.value = item.qtyCajas;
 
   updateCart();
+  renderProducts();
 }
 
 function manualQty(productId, value) {
@@ -954,6 +1044,7 @@ function manualQty(productId, value) {
 
   item.qtyCajas = qty;
   updateCart();
+  renderProducts();
 }
 
 function removeItem(productId) {
@@ -961,6 +1052,7 @@ function removeItem(productId) {
   if (idx >= 0) cart.splice(idx, 1);
   toggleControls(productId, false);
   updateCart();
+  renderProducts();
 }
 
 function toggleControls(productId, show) {
@@ -1242,6 +1334,14 @@ async function openMyOrders() {
   $('profileBtn')?.addEventListener('click', (e) => { e.preventDefault(); toggleUserMenu(); });
   $('helloNavBtn')?.addEventListener('click', (e) => { e.preventDefault(); toggleUserMenu(); });
 
+  const sortSel = $('sortSelect');
+    if (sortSel) {
+  sortSel.addEventListener('change', () => {
+    sortMode = sortSel.value || 'category';
+    renderProducts();
+  });
+  }
+
   // Pago: botones -> select
   $('paymentButtons')?.addEventListener('click', (e) => {
     const btn = e.target.closest('.pay-btn');
@@ -1326,6 +1426,11 @@ async function openMyOrders() {
   // Reaccionar a cambios auth
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
     currentSession = session;
+    // ✅ limpiar búsqueda al loguear/desloguear para que no filtre a "0 resultados"
+    searchTerm = '';
+    const ns = document.getElementById('navSearch');
+    if (ns) ns.value = '';
+
     await refreshAuthState();
     await loadProductsFromDB();
 

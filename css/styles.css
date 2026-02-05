@@ -215,17 +215,24 @@ body {
 .section.active { display: block; }
 
 /* TITULO + NOTA */
-.section-title-row {
+.section-title-row{
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  margin: 40px 0;
+  margin: 20px 0 30px;
   padding: 0 40px;
 }
 
 .section-title {
   text-align: center;
   font-size: 32px;
+}
+
+.right-note{
+  justify-self: end;
+  font-size: 13px;
+  font-weight: bold;
+  color: #222;
 }
 
 /* (Tu HTML usa #customerNote; si además tenías .note-left no molesta) */
@@ -1097,4 +1104,182 @@ body {
 /* en mobile: que no quede gigante */
 @media (max-width: 900px){
   .nav-search{ width: 170px; }
+}
+
+.qty-panel{
+  margin-top: 12px;
+  border-top: 1px solid #eee;
+  padding-top: 12px;
+  display: grid;
+  gap: 8px;              /* más compacto */
+  justify-items: center; /* TODO centrado */
+}
+
+.qty-row{
+  display: flex;
+  align-items: center;
+  justify-content: center; /* centra texto + stepper */
+  gap: 10px;
+}
+
+.qty-label{
+  font-size: 13px;
+  font-weight: bold;
+  color: #222;
+}
+
+.qty-stepper{
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.qty-btn{
+  width: 36px;
+  height: 34px;
+  border: none;
+  background: #f6f6f6;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.qty-btn:disabled{
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qty-input{
+  width: 54px;
+  height: 34px;
+  border: none;
+  text-align: center;
+  outline: none;
+  font-size: 14px;
+}
+
+.qty-meta{
+  display: flex;
+  justify-content: center; /* centra UxB y Unidades */
+  gap: 16px;               /* más cerca entre sí */
+  font-size: 12px;
+  color: #444;
+}
+
+.qty-chips{
+  display: flex;
+  gap: 10px;
+  justify-content: center; /* centra +5 +10 */
+}
+
+.chip{
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chip:hover{ background:#f5f5f5; }
+
+.qty-actions{
+  display: flex;
+  gap: 10px;
+  justify-content: center; /* centra Ver pedido + Quitar */
+}
+
+.add-btn.in-cart{
+  background: #111;
+  opacity: 0.95;
+}
+
+.remove-btn{
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.remove-btn:hover{ background:#f5f5f5; }
+
+/* Quitar flechas del input number */
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.qty-input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.go-cart-btn{
+  border: none;
+  background: #111;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.go-cart-btn:hover{ opacity: 0.92; }
+
+.product-cod{
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.product-name{
+  font-size: 17px;
+  font-weight: normal;
+}
+
+.badge-nuevo{
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #ff0000;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 7px 12px;
+  border-radius: 10px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 2px rgba(0,0,0,0.1);
+}
+
+.product-card{
+  position: relative;
+}
+
+.sort-row{
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 14px;
+}
+
+.sort-label{
+  font-size: 14px;
+  color: #222;
+}
+
+.sort-select{
+  font-size: 16px;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  outline: none;
+}
+
+.sort-select:focus{
+  border-color: #111;
 }

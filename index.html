@@ -23,14 +23,20 @@
     <!-- CENTRO: Categorías / Productos / Pedido -->
     <div class="nav-center">
 
-  <!-- BUSCADOR NAV -->
-  <input
+    <!-- BUSCADOR NAV -->
+    <input
     id="navSearch"
     class="nav-search"
     type="search"
     placeholder="Buscar…"
+    name="catalog_search"
+    inputmode="search"
     autocomplete="off"
-  />
+    autocapitalize="off"
+    autocorrect="off"
+    spellcheck="false"
+    aria-label="Buscar productos"
+    />
 
   <div class="dropdown-wrap">
     <a id="categoriesBtn">Categorías ▾</a>
@@ -84,9 +90,13 @@
 <!-- PRODUCTOS -->
 <section id="productos" class="section active">
   <div class="section-title-row">
-    <div class="hello" id="customerNote"></div>
-    <div class="title-spacer"></div>
+  <div></div>
+
+  <h2 class="section-title"></h2>
+
+  <div class="right-note" id="customerNote"></div>
   </div>
+
 
   <!-- LAYOUT: sidebar categorías + productos -->
   <div class="products-layout">
@@ -96,6 +106,18 @@
     </aside>
 
     <main class="products-main">
+      <div class="sort-row">
+      <label class="sort-label" for="sortSelect">Ordenar por</label>
+      <div class="sort-wrap">
+      <select id="sortSelect" class="sort-select">
+        <option value="category" selected>Categorías</option>
+        <option value="bestsellers">Más Vendidos</option>
+        <option value="price_desc">Mayor precio por categoría</option>
+        <option value="price_asc">Menor precio por categoría</option>
+      </select>
+  </div>
+</div>
+
       <div id="productsContainer"></div>
     </main>
   </div>
@@ -110,9 +132,9 @@
 <!-- OPCIÓN DE ENTREGA (obligatoria) -->
 <div class="ship-row">
   <div class="ship-card">
-    <label class="ship-label" for="shippingSelect">Entrega</label>
+    <label class="ship-label" for="shippingSelect">Indicar Dirección de Entrega</label>
     <select id="shippingSelect" class="ship-select">
-      <option value="" selected>Elegir</option>
+      <option value="" selected>Elegir Sucursal</option>
       <option value="retira_devoto">Retira en Devoto</option>
       <option value="envio_sucursal">Envío a Sucursal</option>
     </select>
@@ -244,7 +266,7 @@
 
     <div class="modal-body">
       <label>CUIT</label>
-      <input id="cuitInput" type="text" placeholder="Ej: 30-71030536-2">
+      <input id="cuitInput" type="text" placeholder="Ej: 11-11111111-1">
 
       <label>Contraseña</label>
       <input id="passInput" type="password" placeholder="Contraseña">
