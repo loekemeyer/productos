@@ -63,13 +63,26 @@
 
     <div class="mobile-sep"></div>
 
+  
     <button id="mobileLogin" class="mobile-item" type="button" onclick="openLogin()">Iniciar sesión</button>
     <button id="mobileMyOrders" class="mobile-item" type="button" onclick="openMyOrders()">Mis pedidos</button>
     <button id="mobileLogout" class="mobile-item danger" type="button" onclick="logout()">Cerrar sesión</button>
     </div>
 
     <div class="nav-right">
-      <a id="loginBtn" onclick="openLogin()">Iniciar sesión</a>
+      <div class="nav-right">
+      <a id="ctaCliente" class="btn-quiero-cliente"
+      href="https://wa.me/541131181021?text=Quiero%20ser%20cliente"
+      target="_blank" rel="noopener">
+      Quiero ser cliente
+      </a>
+
+  <a id="loginBtn" onclick="openLogin()">Iniciar sesión</a>
+
+  <div class="user-box" id="userBox" style="display:none;">
+    ...
+  </div>
+</div>
 
       <div class="user-box" id="userBox" style="display:none;">
         <button id="helloNavBtn" class="hello-nav-btn" type="button">Hola!</button>
@@ -266,7 +279,7 @@
 
     <div class="modal-body">
       <label>CUIT</label>
-      <input id="cuitInput" type="text" placeholder="Ej: 11-11111111-1">
+      <input id="cuitInput" type="text" placeholder="Ej: 11-11111111-1" inputmode="numeric" maxlength="13">
 
       <label>Contraseña</label>
       <input id="passInput" type="password" placeholder="Contraseña">

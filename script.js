@@ -1,10 +1,3 @@
-/***********************
- * script.js (corregido)
- * - Orden fijo de categorías + subcategorías (Utensilios)
- * - Sidebar con toggles (acumulativos) + "Todos los artículos" ON por default
- * - Dropdown Categorías con el mismo comportamiento (sync)
- * - Buscador arriba a la derecha (filtra dentro de lo visible por toggles)
- ***********************/
 'use strict';
 
 /***********************
@@ -19,7 +12,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
  ***********************/
 const WEB_ORDER_DISCOUNT = 0.025; // 2.5% siempre
 const BASE_IMG = `${SUPABASE_URL}/storage/v1/object/public/products-images/`;
-const IMG_VERSION = "2026-02-04"; // cambiá esto cuando actualices imágenes
+const IMG_VERSION = "2026-02-06-2"; // cambiá esto cuando actualices imágenes
 
 /***********************
  * ORDEN FIJO (como pediste)
@@ -281,6 +274,7 @@ async function refreshAuthState() {
 
     if ($('loginBtn')) $('loginBtn').style.display = 'inline';
     if ($('userBox')) $('userBox').style.display = 'none';
+    if ($('ctaCliente')) $('ctaCliente').style.display = 'inline-flex';
     if ($('helloNavBtn')) $('helloNavBtn').innerText = '';
     if ($('customerNote')) $('customerNote').innerText = '';
     if ($('menuMyOrders')) $('menuMyOrders').style.display = 'none';
@@ -322,6 +316,7 @@ async function refreshAuthState() {
 
   if ($('loginBtn')) $('loginBtn').style.display = 'none';
   if ($('userBox')) $('userBox').style.display = 'inline-flex';
+  if ($('ctaCliente')) $('ctaCliente').style.display = 'none';
 
   const name = (customerProfile?.business_name || '').trim();
   if ($('helloNavBtn')) $('helloNavBtn').innerText = name ? `Hola, ${name} !` : 'Hola!';
@@ -453,7 +448,12 @@ async function loadProductsFromDB() {
  * CATEGORÍAS HELPERS (orden fijo + fallback)
  ***********************/
 function getOrderedCategoriesFrom(list) {
-  const cats = [...new Set(list.map(p => String(p.category || '').trim()).filter(Boolean))];
+  const presentCats = new Set(
+  list.map(p => String(p.category || '').trim()).filter(Boolean)
+);
+
+// respetar orden predefinido y mostrar solo las presentes
+const cats = CATEGORY_ORDER.filter(cat => presentCats.has(cat));
 
   const ordered = [
     ...CATEGORY_ORDER.filter(c => cats.includes(c)),
@@ -562,6 +562,7 @@ function renderCategoriesMenu() {
       renderProducts();
     });
   }
+
 
   menu.querySelectorAll('.dd-toggle-cat').forEach(inp => {
     inp.addEventListener('change', () => {
@@ -773,130 +774,209 @@ function renderProducts() {
   if (!container) return;
 
   container.innerHTML = '';
-    
+
   const logged = !!currentSession;
 
-  // base filtrada (por toggles + search)
-  const filtered = getFilteredProducts();
+  // ===============================
+  // LISTA BASE (toggles) + BUSCADOR
+  // - Sin búsqueda: respeta toggles (menú izq)
+  // - Con búsqueda: GLOBAL por cod/description (ignora toggles)
+  // ===============================
+  let list = (typeof getFilteredProducts === 'function') ? getFilteredProducts() : products;
 
-  // categorías a mostrar en este momento (según filtros)
-  const orderedCategories = getOrderedCategoriesFrom(filtered);
+  if (typeof searchTerm === 'string' && searchTerm.trim()) {
+    const normalize = (s) =>
+      String(s ?? '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
 
-  const buildCard = (p) => {
-  const pid = String(p.id);
-  const codSafe = String(p.cod || '').trim();
-  const imgSrc = `${BASE_IMG}${encodeURIComponent(codSafe)}.jpg?v=${IMG_VERSION}`;
-  const imgFallback = "img/no-image.jpg";
-  const tuPrecio = logged ? unitYourPrice(p.list_price) : 0;
-  const isNuevo = p.ranking == null;
+    const term = normalize(searchTerm.trim());
 
-  const inCart = cart.find(i => String(i.productId) === String(pid));
-  const qty = inCart ? Number(inCart.qtyCajas || 0) : 0;
-  const totalUni = qty * Number(p.uxb || 0);
-  
-  return `
-    <div class="product-card" id="card-${pid}">
-      ${isNuevo ? `<div class="badge-nuevo">NUEVO</div>` : ``}
-      <img id="img-${pid}"
-           src="${imgSrc}"
-           alt="${String(p.description || '')}"
-           onerror="this.onerror=null;this.src='${imgFallback}'">
+    list = products.filter(p => {
+      const cod = normalize(p.cod);
+      const name = normalize(p.description);
+      return cod.includes(term) || name.includes(term);
+    });
+  }
 
-      <div class="product-info">
-        <div class="product-cod">Cod: <span>${codSafe}</span></div>
-        <div class="product-name">${String(p.description || '')}</div>
-
-
-        <div class="${logged ? '' : 'price-hidden'}">
-          Precio Lista: <span>$${formatMoney(p.list_price)}</span><br>
-          Tu Precio: <span>$${formatMoney(tuPrecio)}</span><br>
-          UxB: <span>${p.uxb}</span>
-        </div>
-
-        <div class="${logged ? 'price-hidden' : ''}">
-          <div class="price-locked">Inicia sesión para ver precios</div>
-          UxB: <span>${p.uxb}</span>
-        </div>
+  // Si no hay nada para mostrar
+  if (!list.length) {
+    container.innerHTML = `
+      <div style="padding:24px 40px; color:#666; font-size:14px;">
+        Sin resultados${(typeof searchTerm === 'string' && searchTerm.trim()) ? ` para "${String(searchTerm).trim()}"` : ''}.
       </div>
+    `;
+    return;
+  }
 
-      ${qty <= 0 ? `
-        <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
-          Agregar al pedido
-        </button>
-      ` : `
-        <div class="qty-panel" id="qty-${pid}">
-          <div class="qty-row">
-            <span class="qty-label">Cajas</span>
+  // Categorías a mostrar (según list)
+  // ===============================
+// CATEGORÍAS EN ORDEN FIJO (no alfabético)
+// ===============================
+const normalizeCat = (s) =>
+  String(s || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
-            <div class="qty-stepper">
-              <button type="button" class="qty-btn" onclick="changeQty('${pid}', -1)">−</button>
-              <input class="qty-input" type="number" min="1" step="1" value="${qty}"
-                     inputmode="numeric"
-                     onchange="manualQty('${pid}', this.value)">
-              <button type="button" class="qty-btn" onclick="changeQty('${pid}', 1)">+</button>
+const ORDER = [
+  'Abrelatas',
+  'Peladores',
+  'Sacacorchos',
+  'Cortadores',
+  'Ralladores',
+  'Coladores',
+  'Afiladores',
+  'Utensilios',
+  'Pinzas',
+  'Destapadores',
+  'Tapon Vino',
+  'Repostería',
+  'Madera',
+  'Mate',
+  'Accesorios',
+  'Vidrio',
+  'Cuchillos de untar',
+  'Contenedores'
+];
+
+// categorías presentes en la lista actual (list ya incluye toggles/búsqueda según tu lógica)
+const present = Array.from(new Set(list.map(p => String(p.category || '').trim()).filter(Boolean)));
+
+const orderIndex = new Map(ORDER.map((c, i) => [normalizeCat(c), i]));
+
+// 1) primero las del orden fijo, 2) lo que no esté en ORDER va al final (alfabético)
+const cats = present.sort((a, b) => {
+  const ia = orderIndex.has(normalizeCat(a)) ? orderIndex.get(normalizeCat(a)) : 999999;
+  const ib = orderIndex.has(normalizeCat(b)) ? orderIndex.get(normalizeCat(b)) : 999999;
+  if (ia !== ib) return ia - ib;
+  return String(a).localeCompare(String(b), 'es');
+});
+
+// opcional para verificar
+// console.log('CATS ORDER', cats);
+
+
+  // 🔧 Card builder (igual para todos los modos)
+  const buildCard = (p) => {
+    const pid = String(p.id);
+    const codSafe = String(p.cod || '').trim();
+    const imgSrc = `${BASE_IMG}${encodeURIComponent(codSafe)}.jpg?v=$1707420000`;
+    const imgFallback = "img/no-image.jpg";
+    const tuPrecio = logged ? unitYourPrice(p.list_price) : 0;
+
+    // "NUEVO" si ranking vacío (null/undefined/'')
+    const isNuevo = (p.ranking === null || p.ranking === undefined || String(p.ranking).trim() === '');
+
+    const inCart = cart.find(i => String(i.productId) === String(pid));
+    const qty = inCart ? Number(inCart.qtyCajas || 0) : 0;
+    const totalUni = qty * Number(p.uxb || 0);
+
+    return `
+      <div class="product-card" id="card-${pid}">
+        ${isNuevo ? `<div class="badge-nuevo">NUEVO</div>` : ``}
+
+        <img id="img-${pid}"
+             src="${imgSrc}"
+             alt="${String(p.description || '')}"
+             onerror="this.onerror=null;this.src='${imgFallback}'">
+
+        <div class="product-info">
+          <div class="product-cod">Cod: <span>${codSafe}</span></div>
+          <div class="product-name">${String(p.description || '')}</div>
+
+          <div class="${logged ? '' : 'price-hidden'}">
+            Precio Lista: <span>$${formatMoney(p.list_price)}</span><br>
+            Tu Precio: <span>$${formatMoney(tuPrecio)}</span><br>
+            UxB: <span>${p.uxb}</span>
+          </div>
+
+          <div class="${logged ? 'price-hidden' : ''}">
+            <div class="price-locked">Inicia sesión para ver precios</div>
+            UxB: <span>${p.uxb}</span>
+          </div>
+        </div>
+
+        ${qty <= 0 ? `
+          <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
+            Agregar al pedido
+          </button>
+        ` : `
+          <div class="qty-panel" id="qty-${pid}">
+            <div class="qty-row">
+              <span class="qty-label">Cajas</span>
+
+              <div class="qty-stepper">
+                <button type="button" class="qty-btn" onclick="changeQty('${pid}', -1)">−</button>
+                <input class="qty-input" type="number" min="1" step="1" value="${qty}"
+                       inputmode="numeric"
+                       onchange="manualQty('${pid}', this.value)">
+                <button type="button" class="qty-btn" onclick="changeQty('${pid}', 1)">+</button>
+              </div>
+            </div>
+
+            <div class="qty-meta">
+              <span>UxB: <strong>${p.uxb}</strong></span>
+              <span>Unidades: <strong>${formatMoney(totalUni)}</strong></span>
+            </div>
+
+            <div class="qty-chips">
+              <button type="button" class="chip" onclick="changeQty('${pid}', 5)">+5</button>
+              <button type="button" class="chip" onclick="changeQty('${pid}', 10)">+10</button>
+            </div>
+
+            <div class="qty-actions">
+              <button type="button" class="go-cart-btn" onclick="showSection('carrito')">
+                Ver pedido (${qty})
+              </button>
+
+              <button type="button" class="remove-btn" onclick="removeItem('${pid}')">
+                Quitar
+              </button>
             </div>
           </div>
+        `}
+      </div>
+    `;
+  };
 
-          <div class="qty-meta">
-            <span>UxB: <strong>${p.uxb}</strong></span>
-            <span>Unidades: <strong>${formatMoney(totalUni)}</strong></span>
-          </div>
+  // 🔥 MODO: MÁS VENDIDOS (ranking global) PERO respetando toggles (list)
+  if (sortMode === 'bestsellers') {
+    const items = [...list].sort((a, b) => {
+      const ar = (a.ranking == null || String(a.ranking).trim() === '') ? 999999 : Number(a.ranking);
+      const br = (b.ranking == null || String(b.ranking).trim() === '') ? 999999 : Number(b.ranking);
 
-          <div class="qty-chips">
-            <button type="button" class="chip" onclick="changeQty('${pid}', 5)">+5</button>
-            <button type="button" class="chip" onclick="changeQty('${pid}', 10)">+10</button>
-          </div>
+      return (ar - br) ||
+        String(a.description || '').localeCompare(String(b.description || ''), 'es');
+    });
 
-<div class="qty-actions">
-            <button type="button" class="go-cart-btn" onclick="showSection('carrito')">
-              Ver pedido (${qty})
-            </button>
+    container.innerHTML = `
+      <div class="products-grid">
+        ${items.map(buildCard).join('')}
+      </div>
+    `;
+    return;
+  }
 
-            <button type="button" class="remove-btn" onclick="removeItem('${pid}')">
-              Quitar
-            </button>
-          </div>
-        </div>
-      `}
-    </div>
-  `;
-};
-
-// 🔥 SOLO en "Más vendidos": vista global sin categorías
-if (sortMode === 'bestsellers') {
-  const list = products; // búsqueda global: ignora toggles
-
-  const items = [...list].sort((a, b) => {
-    const ar = (a.ranking === null || a.ranking === undefined) ? 999999 : Number(a.ranking);
-    const br = (b.ranking === null || b.ranking === undefined) ? 999999 : Number(b.ranking);
-
-    return (ar - br) ||
-      String(a.description || '').localeCompare(String(b.description || ''), 'es');
-  });
-
-  container.innerHTML = `
-    <div class="products-grid">
-      ${items.map(buildCard).join('')}
-    </div>
-  `;
-  return;
-}
-
-  // Render categorías
-  orderedCategories.forEach(category => {
+  // ===============================
+  // MODO NORMAL: render por categorías
+  // ===============================
+  cats.forEach(category => {
     const block = document.createElement('div');
     block.className = 'category-block';
     const catId = `cat-${slugifyCategory(category)}`;
 
-    const items = products
-  .filter(p => p.category === category)
-  .sort(getSortComparator());
+    const items = list
+      .filter(p => String(p.category || '').trim() === String(category).trim())
+      .sort(getSortComparator());
 
     if (!items.length) return;
 
     let cardsHtml = '';
 
-    // SOLO Utensilios: subtítulos dentro de la MISMA grilla, orden fijo
+    // SOLO Utensilios: subtítulos por subcategory en orden fijo
     if (String(category).trim().toLowerCase() === 'utensilios') {
       const groups = new Map();
 
@@ -910,21 +990,22 @@ if (sortMode === 'bestsellers') {
 
       const present = Array.from(groups.keys());
 
-      const fixed = UTENSILIOS_SUB_ORDER.filter(s => present.includes(s));
-      const extras = present
-        .filter(s => s !== 'Otros' && !UTENSILIOS_SUB_ORDER.includes(s))
-        .sort((a, b) => a.localeCompare(b, 'es'));
-      const hasOtros = present.includes('Otros');
+      const fixed = (typeof UTENSILIOS_SUB_ORDER !== 'undefined')
+        ? UTENSILIOS_SUB_ORDER.filter(s => present.includes(s))
+        : present.filter(s => s !== 'Otros').sort((a, b) => a.localeCompare(b, 'es'));
 
+      const extras = present
+        .filter(s => s !== 'Otros' && !(typeof UTENSILIOS_SUB_ORDER !== 'undefined' && UTENSILIOS_SUB_ORDER.includes(s)))
+        .sort((a, b) => a.localeCompare(b, 'es'));
+
+      const hasOtros = present.includes('Otros');
       const subcatsOrdered = [...fixed, ...extras, ...(hasOtros ? ['Otros'] : [])];
 
       cardsHtml = subcatsOrdered.map(sub => {
         const prods = groups.get(sub) || [];
 
-        prods.sort((a, b) =>
-          ((a.ranking ?? 999999) - (b.ranking ?? 999999)) ||
-          String(a.description || '').localeCompare(String(b.description || ''), 'es')
-        );
+        // Orden dentro de subcat: usa el comparador general
+        prods.sort(getSortComparator());
 
         const subtitle = `
           <div style="
@@ -956,11 +1037,11 @@ if (sortMode === 'bestsellers') {
     container.appendChild(block);
   });
 
-  // Si no hay resultados
+  // Si no quedó nada (por filtros)
   if (!container.children.length) {
     container.innerHTML = `
       <div style="padding:24px 40px; color:#666; font-size:14px;">
-        Sin resultados para "${String(searchTerm || '').trim()}".
+        Sin resultados${(typeof searchTerm === 'string' && searchTerm.trim()) ? ` para "${String(searchTerm).trim()}"` : ''}.
       </div>
     `;
   }
@@ -1241,7 +1322,7 @@ async function submitOrder() {
     const orderId = orderRow.id;
 
     const itemsPayload = cart.map(item => {
-      const p = products.find(x => String(x.id) === String(item.productId));
+      const p = list.find(x => String(x.id) === String(item.productId));
       if (!p) return null;
 
       const qtyCajas = Number(item.qtyCajas || 0);
@@ -1323,6 +1404,31 @@ async function openMyOrders() {
 
   // UI buscador
   // ensureSearchUI();
+
+
+  function formatCUITLive(value) {
+  const d = String(value || '').replace(/\D/g, '').slice(0, 11); // solo 11 dígitos
+  if (d.length <= 2) return d;
+  if (d.length <= 10) return `${d.slice(0, 2)}-${d.slice(2)}`;
+  return `${d.slice(0, 2)}-${d.slice(2, 10)}-${d.slice(10)}`;
+  }
+
+  const cuitEl = document.getElementById('cuitInput');
+  if (cuitEl) {
+  cuitEl.addEventListener('input', (e) => {
+    const el = e.target;
+    const start = el.selectionStart; // cursor
+    const before = el.value;
+
+    el.value = formatCUITLive(el.value);
+
+    // intenta mantener el cursor en lugar razonable
+    const diff = el.value.length - before.length;
+    const next = (start ?? el.value.length) + diff;
+    el.setSelectionRange(next, next);
+  });
+  }
+
 
   // Categorías dropdown
   $('categoriesBtn')?.addEventListener('click', (e) => {
@@ -1442,3 +1548,4 @@ async function openMyOrders() {
     syncPaymentButtons();
   });
 })();
+
