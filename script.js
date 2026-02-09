@@ -4,7 +4,7 @@
  * SUPABASE CONFIG
  ***********************/
 const SUPABASE_URL = "https://kwkclwhmoygunqmlegrg.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3a2Nsd2htb3lndW5xbWxlZ3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MjA2NzUsImV4cCI6MjA4NTA5NjY3NX0.soqPY5hfA3RkAJ9jmIms8UtEGUc4WpZztpEbmDijOgU"; // <-- dejá tu key real
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3a2Nsd2htb3lndW5xbWxlZ3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MjA2NzUsImV4cCI6MjA4NTA5NjY3NX0.soqPY5hfA3RkAJ9jmIms8UtEGUc4WpZztpEbmDijOgU";
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /***********************
@@ -60,10 +60,14 @@ let deliveryChoice = { slot: '', label: '' };
 
 let sortMode = 'category'; // category | bestsellers | price_desc | price_asc
 
-// Filtros UI
+// Filtros UI (DESKTOP / estado aplicado)
 let filterAll = true;                 // "Todos" ON por default
 let filterCats = new Set();           // acumulativo
 let searchTerm = '';                  // buscador
+
+// ===== Mobile Filters (pendientes) =====
+let pendingFilterAll = true;
+let pendingFilterCats = new Set();
 
 /***********************
  * DOM HELPERS
@@ -127,6 +131,7 @@ function showSection(id) {
   closeCategoriesMenu();
   closeUserMenu();
   closeMobileMenu();
+  closeFiltersOverlay();
 }
 
 function goToProductsTop() {
@@ -194,10 +199,12 @@ async function login() {
 
   currentSession = data.session || null;
   closeLogin();
-  // ✅ limpiar búsqueda para que no filtre todo al loguear
+
+  // limpiar búsqueda
   searchTerm = '';
-  const ns = document.getElementById('navSearch');
+  const ns = $('navSearch');
   if (ns) ns.value = '';
+
   await refreshAuthState();
   await loadProductsFromDB();
   renderCategoriesMenu();
@@ -323,17 +330,12 @@ async function refreshAuthState() {
 
   if ($('menuMyOrders')) $('menuMyOrders').style.display = isAdmin ? 'none' : 'block';
 
-  // Texto informativo alineado a la derecha (en el body)
-const note = $('customerNote');
-if (note) {
-  if (!currentSession) {
-    note.innerText = '';
-  } else if (isAdmin) {
-    note.innerText = 'Modo Administrador';
-  } else {
-    note.innerText = 'Ya está aplicado tu Dto x Volumen';
+  const note = $('customerNote');
+  if (note) {
+    if (!currentSession) note.innerText = '';
+    else if (isAdmin) note.innerText = 'Modo Administrador';
+    else note.innerText = 'Ya está aplicado tu Dto x Volumen';
   }
-}
 
   await loadDeliveryOptions();
 }
@@ -398,28 +400,27 @@ async function loadProductsFromDB() {
     }
 
     products = (data || []).map(p => ({
-    id: p.id,
-    cod: p.cod,
-    category: p.category || 'Sin categoría',
-    subcategory: p.subcategory,     // ✅ nuevo
-    ranking: p.ranking,             // ✅ nuevo
-    description: p.description,
-    list_price: null,
-    uxb: p.uxb,
-    images: Array.isArray(p.images) ? p.images : []
+      id: p.id,
+      cod: p.cod,
+      category: p.category || 'Sin categoría',
+      subcategory: p.subcategory,
+      ranking: (p.ranking === null || p.ranking === undefined || p.ranking === '') ? null : Number(p.ranking),
+      orden_catalogo: (p.orden_catalogo === null || p.orden_catalogo === undefined || p.orden_catalogo === '') ? null : Number(p.orden_catalogo),
+      description: p.description,
+      list_price: null,
+      uxb: p.uxb,
+      images: Array.isArray(p.images) ? p.images : []
     }));
-
     return;
   }
 
   const { data, error } = await supabaseClient
     .from('products')
-    .select('id,cod,category,subcategory,ranking,description,list_price,uxb,images,active')
+    .select('id,cod,category,subcategory,ranking,orden_catalogo,description,list_price,uxb,images,active')
     .eq('active', true)
     .order('category', { ascending: true })
     .order('orden_catalogo', { ascending: true, nullsFirst: false })
     .order('description', { ascending: true });
-
 
   if (error) {
     console.error('Error loading products:', error);
@@ -428,20 +429,18 @@ async function loadProductsFromDB() {
   }
 
   products = (data || []).map(p => ({
-  id: p.id,
-  cod: p.cod,
-  category: p.category || 'Sin categoría',
-  subcategory: (p.subcategory && String(p.subcategory).trim()) ? String(p.subcategory).trim() : null,
-
-  // ✅ clave: NO convertir null a 999999 (dejalo null para poder mostrar NUEVO)
-  ranking: (p.ranking === null || p.ranking === undefined || p.ranking === '') ? null : Number(p.ranking),
-
-  description: p.description,
-  list_price: p.list_price,
-  uxb: p.uxb,
-  images: Array.isArray(p.images) ? p.images : [],
-  active: !!p.active
-}));
+    id: p.id,
+    cod: p.cod,
+    category: p.category || 'Sin categoría',
+    subcategory: (p.subcategory && String(p.subcategory).trim()) ? String(p.subcategory).trim() : null,
+    ranking: (p.ranking === null || p.ranking === undefined || p.ranking === '') ? null : Number(p.ranking),
+    orden_catalogo: (p.orden_catalogo === null || p.orden_catalogo === undefined || p.orden_catalogo === '') ? null : Number(p.orden_catalogo),
+    description: p.description,
+    list_price: p.list_price,
+    uxb: p.uxb,
+    images: Array.isArray(p.images) ? p.images : [],
+    active: !!p.active
+  }));
 }
 
 /***********************
@@ -449,17 +448,18 @@ async function loadProductsFromDB() {
  ***********************/
 function getOrderedCategoriesFrom(list) {
   const presentCats = new Set(
-  list.map(p => String(p.category || '').trim()).filter(Boolean)
-);
+    list.map(p => String(p.category || '').trim()).filter(Boolean)
+  );
 
-// respetar orden predefinido y mostrar solo las presentes
-const cats = CATEGORY_ORDER.filter(cat => presentCats.has(cat));
+  // primero las del orden fijo que estén presentes
+  const inOrder = CATEGORY_ORDER.filter(cat => presentCats.has(cat));
 
-  const ordered = [
-    ...CATEGORY_ORDER.filter(c => cats.includes(c)),
-    ...cats.filter(c => !CATEGORY_ORDER.includes(c)).sort((a, b) => a.localeCompare(b, 'es'))
-  ];
-  return ordered;
+  // extras (categorías nuevas no contempladas)
+  const extras = Array.from(presentCats)
+    .filter(cat => !CATEGORY_ORDER.includes(cat))
+    .sort((a, b) => a.localeCompare(b, 'es'));
+
+  return [...inOrder, ...extras];
 }
 
 function slugifyCategory(text) {
@@ -473,8 +473,8 @@ function slugifyCategory(text) {
 function normalizeText(str) {
   return String(str || '')
     .toLowerCase()
-    .normalize('NFD')              // separa letras y acentos
-    .replace(/[\u0300-\u036f]/g, '') // elimina acentos
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .trim();
 }
 
@@ -494,24 +494,21 @@ function getSortComparator() {
     }
 
     if (sortMode === 'price_desc') {
-      // si no hay precio (no logueado) cae al final
       return (bPrice - aPrice) || (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
     }
 
     if (sortMode === 'price_asc') {
-      // precios sin datos caen al final
       const aP = aPrice < 0 ? 999999999 : aPrice;
       const bP = bPrice < 0 ? 999999999 : bPrice;
       return (aP - bP) || (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
     }
 
-    // default: category (tu orden_catalogo manda)
     return (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
   };
 }
 
 /***********************
- * DROPDOWN CATEGORÍAS (con toggles, sync con sidebar)
+ * DROPDOWN CATEGORÍAS (desktop)
  ***********************/
 function closeCategoriesMenu() {
   const menu = $('categoriesMenu');
@@ -532,24 +529,31 @@ function renderCategoriesMenu() {
 
   const ordered = getOrderedCategoriesFrom(products);
 
-  // UI (checkbox toggles)
   menu.innerHTML = `
-    <div style="padding:6px;">
-      <label class="dd-toggle-row">
+    <div>
+      <label class="dd-toggle-row dd-chip">
         <span>Todos los artículos</span>
         <input type="checkbox" id="ddToggleAll" ${filterAll ? 'checked' : ''}>
       </label>
+
       <div class="dd-sep"></div>
-      ${ordered.map(cat => `
-        <label class="dd-toggle-row">
-          <span>${cat}</span>
-          <input type="checkbox" class="dd-toggle-cat" data-cat="${cat}" ${filterCats.has(cat) ? 'checked' : ''}>
-        </label>
-      `).join('')}
+
+      <div class="dd-cats-grid">
+        ${ordered.map(cat => `
+          <label class="dd-chip">
+            <span>${cat}</span>
+            <input
+              type="checkbox"
+              class="dd-toggle-cat"
+              data-cat="${cat}"
+              ${filterCats.has(cat) ? 'checked' : ''}
+            >
+          </label>
+        `).join('')}
+      </div>
     </div>
   `;
 
-  // events
   const ddAll = $('ddToggleAll');
   if (ddAll) {
     ddAll.addEventListener('change', () => {
@@ -562,7 +566,6 @@ function renderCategoriesMenu() {
       renderProducts();
     });
   }
-
 
   menu.querySelectorAll('.dd-toggle-cat').forEach(inp => {
     inp.addEventListener('change', () => {
@@ -581,7 +584,7 @@ function renderCategoriesMenu() {
 }
 
 /***********************
- * SIDEBAR CATEGORÍAS (toggles)
+ * SIDEBAR CATEGORÍAS (desktop)
  ***********************/
 function renderCategoriesSidebar() {
   const list = $('categoriesSidebarList');
@@ -590,7 +593,6 @@ function renderCategoriesSidebar() {
   const ordered = getOrderedCategoriesFrom(products);
 
   list.innerHTML = `
-    
     <label class="toggle-row ${filterAll ? 'active' : ''}">
       <span class="toggle-text">Todos los artículos</span>
       <input type="checkbox" id="toggleAll" ${filterAll ? 'checked' : ''}>
@@ -608,7 +610,6 @@ function renderCategoriesSidebar() {
     `).join('')}
   `;
 
-  // Toggles (igual que antes)
   const all = $('toggleAll');
   if (all) {
     all.addEventListener('change', () => {
@@ -617,7 +618,7 @@ function renderCategoriesSidebar() {
       if (!filterAll && filterCats.size === 0) filterAll = true;
 
       renderCategoriesSidebar();
-      renderCategoriesMenu?.(); // si existe
+      renderCategoriesMenu?.();
       renderProducts();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -634,13 +635,12 @@ function renderCategoriesSidebar() {
       if (filterCats.size === 0) filterAll = true;
 
       renderCategoriesSidebar();
-      renderCategoriesMenu?.(); // si existe
+      renderCategoriesMenu?.();
       renderProducts();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
 }
-
 
 /***********************
  * USER MENU
@@ -659,102 +659,38 @@ function toggleUserMenu() {
 }
 
 /***********************
- * BUSCADOR (arriba derecha, sin tocar HTML)
+ * BUSCADOR
  ***********************/
-function ensureSearchUI() {
-  const navRight = document.querySelector('.nav-right');
-  if (!navRight) return;
-
-  // si ya existe, no recrear
-  if (document.getElementById('productsSearch')) return;
-
-  const wrap = document.createElement('div');
-  wrap.style.display = 'inline-flex';
-  wrap.style.alignItems = 'center';
-  wrap.style.gap = '8px';
-
-  const input = document.createElement('input');
-  input.id = 'productsSearch';
-  input.type = 'search';
-  input.placeholder = 'Buscar…';
-  input.autocomplete = 'off';
-
-  // estilo inline para que quede prolijo sin tocar CSS
-  input.style.height = '34px';
-  input.style.width = '220px';
-  input.style.borderRadius = '10px';
-  input.style.border = '1px solid rgba(255,255,255,0.25)';
-  input.style.background = 'rgba(255,255,255,0.08)';
-  input.style.color = '#fff';
-  input.style.padding = '0 10px';
-  input.style.outline = 'none';
-  input.style.fontSize = '13px';
-
-  input.addEventListener('input', () => {
-    searchTerm = String(input.value || '').trim();
-    renderProducts();
-  });
-
-  wrap.appendChild(input);
-
-  // insertar antes de loginBtn (o al final si no está)
-  const loginBtn = $('loginBtn');
-  if (loginBtn && loginBtn.parentElement === navRight) {
-    navRight.insertBefore(wrap, loginBtn);
-  } else {
-    navRight.insertBefore(wrap, navRight.firstChild);
-  }
-}
-
 function setSearchInputValue(val) {
   const inp = $('productsSearch');
   if (inp) inp.value = val || '';
 }
 
-function matchesSearch(p, term) {
-  if (!term) return true;
-  const t = term.toLowerCase();
-
-  const haystack = [
-    p.cod,
-    p.description,
-    p.category,
-    p.subcategory
-  ].map(x => String(x || '').toLowerCase()).join(' ');
-
-  return haystack.includes(t);
-}
-
-/***********************
- * FILTRO GLOBAL A PRODUCTOS (toggles + search)
- ***********************/
 function getFilteredProducts() {
   // 1) Si hay búsqueda: GLOBAL (ignora toggles)
   if (searchTerm && String(searchTerm).trim()) {
-  const term = String(searchTerm)
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // saca tildes
-    .trim();
+    const term = String(searchTerm)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
 
-  return products.filter(p => {
-    const hay = [
-      p.cod,
-      p.description,
-      p.category,
-      p.subcategory
-    ]
-      .map(x =>
-        String(x || '')
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-      )
-      .join(' ');
+    return products.filter(p => {
+      const hay = [
+        p.cod,
+        p.description
+      ]
+        .map(x =>
+          String(x || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+        )
+        .join(' ');
 
-    return hay.includes(term);
-  });
-}
+      return hay.includes(term);
+    });
+  }
 
   // 2) Sin búsqueda: respeta toggles
   let list = products.slice();
@@ -767,7 +703,7 @@ function getFilteredProducts() {
 }
 
 /***********************
- * RENDER PRODUCTS (orden fijo + Utensilios suborden fijo)
+ * RENDER PRODUCTS
  ***********************/
 function renderProducts() {
   const container = $('productsContainer');
@@ -777,30 +713,8 @@ function renderProducts() {
 
   const logged = !!currentSession;
 
-  // ===============================
-  // LISTA BASE (toggles) + BUSCADOR
-  // - Sin búsqueda: respeta toggles (menú izq)
-  // - Con búsqueda: GLOBAL por cod/description (ignora toggles)
-  // ===============================
   let list = (typeof getFilteredProducts === 'function') ? getFilteredProducts() : products;
 
-  if (typeof searchTerm === 'string' && searchTerm.trim()) {
-    const normalize = (s) =>
-      String(s ?? '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
-
-    const term = normalize(searchTerm.trim());
-
-    list = products.filter(p => {
-      const cod = normalize(p.cod);
-      const name = normalize(p.description);
-      return cod.includes(term) || name.includes(term);
-    });
-  }
-
-  // Si no hay nada para mostrar
   if (!list.length) {
     container.innerHTML = `
       <div style="padding:24px 40px; color:#666; font-size:14px;">
@@ -810,64 +724,15 @@ function renderProducts() {
     return;
   }
 
-  // Categorías a mostrar (según list)
-  // ===============================
-// CATEGORÍAS EN ORDEN FIJO (no alfabético)
-// ===============================
-const normalizeCat = (s) =>
-  String(s || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+  const cats = getOrderedCategoriesFrom(list);
 
-const ORDER = [
-  'Abrelatas',
-  'Peladores',
-  'Sacacorchos',
-  'Cortadores',
-  'Ralladores',
-  'Coladores',
-  'Afiladores',
-  'Utensilios',
-  'Pinzas',
-  'Destapadores',
-  'Tapon Vino',
-  'Repostería',
-  'Madera',
-  'Mate',
-  'Accesorios',
-  'Vidrio',
-  'Cuchillos de untar',
-  'Contenedores'
-];
-
-// categorías presentes en la lista actual (list ya incluye toggles/búsqueda según tu lógica)
-const present = Array.from(new Set(list.map(p => String(p.category || '').trim()).filter(Boolean)));
-
-const orderIndex = new Map(ORDER.map((c, i) => [normalizeCat(c), i]));
-
-// 1) primero las del orden fijo, 2) lo que no esté en ORDER va al final (alfabético)
-const cats = present.sort((a, b) => {
-  const ia = orderIndex.has(normalizeCat(a)) ? orderIndex.get(normalizeCat(a)) : 999999;
-  const ib = orderIndex.has(normalizeCat(b)) ? orderIndex.get(normalizeCat(b)) : 999999;
-  if (ia !== ib) return ia - ib;
-  return String(a).localeCompare(String(b), 'es');
-});
-
-// opcional para verificar
-// console.log('CATS ORDER', cats);
-
-
-  // 🔧 Card builder (igual para todos los modos)
   const buildCard = (p) => {
     const pid = String(p.id);
     const codSafe = String(p.cod || '').trim();
-    const imgSrc = `${BASE_IMG}${encodeURIComponent(codSafe)}.jpg?v=$1707420000`;
+    const imgSrc = `${BASE_IMG}${encodeURIComponent(codSafe)}.jpg?v=${encodeURIComponent(IMG_VERSION)}`;
     const imgFallback = "img/no-image.jpg";
     const tuPrecio = logged ? unitYourPrice(p.list_price) : 0;
 
-    // "NUEVO" si ranking vacío (null/undefined/'')
     const isNuevo = (p.ranking === null || p.ranking === undefined || String(p.ranking).trim() === '');
 
     const inCart = cart.find(i => String(i.productId) === String(pid));
@@ -942,14 +807,12 @@ const cats = present.sort((a, b) => {
     `;
   };
 
-  // 🔥 MODO: MÁS VENDIDOS (ranking global) PERO respetando toggles (list)
+  // 🔥 Más vendidos: ranking global, pero respeta filtros aplicados (list)
   if (sortMode === 'bestsellers') {
     const items = [...list].sort((a, b) => {
       const ar = (a.ranking == null || String(a.ranking).trim() === '') ? 999999 : Number(a.ranking);
       const br = (b.ranking == null || String(b.ranking).trim() === '') ? 999999 : Number(b.ranking);
-
-      return (ar - br) ||
-        String(a.description || '').localeCompare(String(b.description || ''), 'es');
+      return (ar - br) || String(a.description||'').localeCompare(String(b.description||''), 'es');
     });
 
     container.innerHTML = `
@@ -960,9 +823,7 @@ const cats = present.sort((a, b) => {
     return;
   }
 
-  // ===============================
-  // MODO NORMAL: render por categorías
-  // ===============================
+  // Normal: por categorías
   cats.forEach(category => {
     const block = document.createElement('div');
     block.className = 'category-block';
@@ -976,7 +837,6 @@ const cats = present.sort((a, b) => {
 
     let cardsHtml = '';
 
-    // SOLO Utensilios: subtítulos por subcategory en orden fijo
     if (String(category).trim().toLowerCase() === 'utensilios') {
       const groups = new Map();
 
@@ -989,22 +849,15 @@ const cats = present.sort((a, b) => {
       });
 
       const present = Array.from(groups.keys());
-
-      const fixed = (typeof UTENSILIOS_SUB_ORDER !== 'undefined')
-        ? UTENSILIOS_SUB_ORDER.filter(s => present.includes(s))
-        : present.filter(s => s !== 'Otros').sort((a, b) => a.localeCompare(b, 'es'));
-
+      const fixed = UTENSILIOS_SUB_ORDER.filter(s => present.includes(s));
       const extras = present
-        .filter(s => s !== 'Otros' && !(typeof UTENSILIOS_SUB_ORDER !== 'undefined' && UTENSILIOS_SUB_ORDER.includes(s)))
+        .filter(s => s !== 'Otros' && !UTENSILIOS_SUB_ORDER.includes(s))
         .sort((a, b) => a.localeCompare(b, 'es'));
-
       const hasOtros = present.includes('Otros');
       const subcatsOrdered = [...fixed, ...extras, ...(hasOtros ? ['Otros'] : [])];
 
       cardsHtml = subcatsOrdered.map(sub => {
         const prods = groups.get(sub) || [];
-
-        // Orden dentro de subcat: usa el comparador general
         prods.sort(getSortComparator());
 
         const subtitle = `
@@ -1022,7 +875,6 @@ const cats = present.sort((a, b) => {
         const cards = prods.map(buildCard).join('');
         return subtitle + cards;
       }).join('');
-
     } else {
       cardsHtml = items.map(buildCard).join('');
     }
@@ -1037,7 +889,6 @@ const cats = present.sort((a, b) => {
     container.appendChild(block);
   });
 
-  // Si no quedó nada (por filtros)
   if (!container.children.length) {
     container.innerHTML = `
       <div style="padding:24px 40px; color:#666; font-size:14px;">
@@ -1045,6 +896,100 @@ const cats = present.sort((a, b) => {
       </div>
     `;
   }
+}
+
+/***********************
+ * MOBILE FILTERS OVERLAY (PENDIENTE + APLICAR)
+ *
+ * Requiere estos IDs en tu HTML (solo en mobile):
+ * - openFiltersBtn (botón al lado de Ordenar por)
+ * - filtersOverlay (overlay)
+ * - filtersGrid (contenedor de botones 2 columnas)
+ * - filtersApplyBtn
+ * - filtersCancelBtn
+ ***********************/
+function openFiltersOverlay(){
+  const ov = $('filtersOverlay');
+  if (!ov) return;
+
+  // arranca siempre desde el estado aplicado actual
+  pendingFilterAll = filterAll;
+  pendingFilterCats = new Set(filterCats);
+
+  renderFiltersOverlayUI();
+
+  ov.classList.add('open');
+  ov.setAttribute('aria-hidden', 'false');
+}
+
+function closeFiltersOverlay(){
+  const ov = $('filtersOverlay');
+  if (!ov) return;
+  ov.classList.remove('open');
+  ov.setAttribute('aria-hidden', 'true');
+}
+
+function applyPendingFilters(){
+  filterAll = pendingFilterAll;
+  filterCats = new Set(pendingFilterCats);
+
+  // sync UIs desktop
+  renderCategoriesMenu();
+  renderCategoriesSidebar();
+
+  renderProducts();
+  closeFiltersOverlay();
+}
+
+function cancelPendingFilters(){
+  closeFiltersOverlay();
+}
+
+function renderFiltersOverlayUI(){
+  const grid = $('filtersGrid');
+  if (!grid) return;
+
+  const ordered = getOrderedCategoriesFrom(products);
+
+  // helper: devuelve true si una cat está activa en “pendiente”
+  const isOn = (cat) => pendingFilterCats.has(cat);
+
+  // armado grid 2 columnas (botones “toggle” visuales)
+  grid.innerHTML = `
+    <button type="button"
+      class="mf-btn ${pendingFilterAll ? 'on' : ''}"
+      data-all="1">Todos los artículos</button>
+    ${ordered.map(cat => `
+      <button type="button"
+        class="mf-btn ${isOn(cat) ? 'on' : ''}"
+        data-cat="${cat}">${cat}</button>
+    `).join('')}
+  `;
+
+  // clicks
+  grid.querySelectorAll('.mf-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const isAll = btn.dataset.all === '1';
+      const cat = btn.dataset.cat;
+
+      if (isAll) {
+        pendingFilterAll = true;
+        pendingFilterCats.clear();
+      } else {
+        // al tocar una categoría, se apaga “todos”
+        pendingFilterAll = false;
+        if (pendingFilterCats.has(cat)) pendingFilterCats.delete(cat);
+        else pendingFilterCats.add(cat);
+
+        if (pendingFilterCats.size === 0) {
+          pendingFilterAll = true;
+        }
+      }
+
+      // re-render para reflejar “on/off”
+      renderFiltersOverlayUI();
+    });
+  });
 }
 
 /***********************
@@ -1321,8 +1266,9 @@ async function submitOrder() {
 
     const orderId = orderRow.id;
 
+    // ✅ FIX: acá NO existe "list" => usar products
     const itemsPayload = cart.map(item => {
-      const p = list.find(x => String(x.id) === String(item.productId));
+      const p = products.find(x => String(x.id) === String(item.productId));
       if (!p) return null;
 
       const qtyCajas = Number(item.qtyCajas || 0);
@@ -1402,53 +1348,44 @@ async function openMyOrders() {
   window.submitOrder = submitOrder;
   window.openMyOrders = openMyOrders;
 
-  // UI buscador
-  // ensureSearchUI();
-
-
   function formatCUITLive(value) {
-  const d = String(value || '').replace(/\D/g, '').slice(0, 11); // solo 11 dígitos
-  if (d.length <= 2) return d;
-  if (d.length <= 10) return `${d.slice(0, 2)}-${d.slice(2)}`;
-  return `${d.slice(0, 2)}-${d.slice(2, 10)}-${d.slice(10)}`;
+    const d = String(value || '').replace(/\D/g, '').slice(0, 11);
+    if (d.length <= 2) return d;
+    if (d.length <= 10) return `${d.slice(0, 2)}-${d.slice(2)}`;
+    return `${d.slice(0, 2)}-${d.slice(2, 10)}-${d.slice(10)}`;
   }
 
-  const cuitEl = document.getElementById('cuitInput');
+  const cuitEl = $('cuitInput');
   if (cuitEl) {
-  cuitEl.addEventListener('input', (e) => {
-    const el = e.target;
-    const start = el.selectionStart; // cursor
-    const before = el.value;
+    cuitEl.addEventListener('input', (e) => {
+      const el = e.target;
+      const start = el.selectionStart;
+      const before = el.value;
 
-    el.value = formatCUITLive(el.value);
+      el.value = formatCUITLive(el.value);
 
-    // intenta mantener el cursor en lugar razonable
-    const diff = el.value.length - before.length;
-    const next = (start ?? el.value.length) + diff;
-    el.setSelectionRange(next, next);
-  });
+      const diff = el.value.length - before.length;
+      const next = (start ?? el.value.length) + diff;
+      el.setSelectionRange(next, next);
+    });
   }
 
-
-  // Categorías dropdown
   $('categoriesBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     toggleCategoriesMenu();
   });
 
-  // User menu
   $('profileBtn')?.addEventListener('click', (e) => { e.preventDefault(); toggleUserMenu(); });
   $('helloNavBtn')?.addEventListener('click', (e) => { e.preventDefault(); toggleUserMenu(); });
 
   const sortSel = $('sortSelect');
-    if (sortSel) {
-  sortSel.addEventListener('change', () => {
-    sortMode = sortSel.value || 'category';
-    renderProducts();
-  });
+  if (sortSel) {
+    sortSel.addEventListener('change', () => {
+      sortMode = sortSel.value || 'category';
+      renderProducts();
+    });
   }
 
-  // Pago: botones -> select
   $('paymentButtons')?.addEventListener('click', (e) => {
     const btn = e.target.closest('.pay-btn');
     if (!btn) return;
@@ -1460,7 +1397,6 @@ async function openMyOrders() {
     updateCart();
   });
 
-  // Entrega
   const shipSel = $('shippingSelect');
   if (shipSel) {
     deliveryChoice = { slot: shipSel.value || '', label: '' };
@@ -1472,7 +1408,6 @@ async function openMyOrders() {
     });
   }
 
-  // Click afuera: cerrar dropdowns y user menu
   document.addEventListener('click', (e) => {
     const catBtn = $('categoriesBtn');
     const catMenu = $('categoriesMenu');
@@ -1496,23 +1431,29 @@ async function openMyOrders() {
   // Buscador NAV (global)
   const navSearch = $('navSearch');
   if (navSearch) {
-  navSearch.addEventListener('input', () => {
-    searchTerm = String(navSearch.value || '').trim();
-    renderProducts();
-  });
+    navSearch.addEventListener('input', () => {
+      searchTerm = String(navSearch.value || '').trim();
+      renderProducts();
+    });
   }
 
-  
-  // Hamburger
   $('hamburgerBtn')?.addEventListener('click', () => { toggleMobileMenu(); });
 
-  // Cerrar menú mobile al tocar fuera
   document.addEventListener('click', (e) => {
     const menu = $('mobileMenu');
     const btn = $('hamburgerBtn');
     if (!menu || !btn) return;
     const clickedInside = menu.contains(e.target) || btn.contains(e.target);
     if (!clickedInside) closeMobileMenu();
+  });
+
+  // ✅ Mobile filtros: abrir/cerrar/aplicar/cancelar
+  $('openFiltersBtn')?.addEventListener('click', () => openFiltersOverlay());
+  $('filtersCancelBtn')?.addEventListener('click', () => cancelPendingFilters());
+  $('filtersApplyBtn')?.addEventListener('click', () => applyPendingFilters());
+
+  $('filtersOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'filtersOverlay') closeFiltersOverlay();
   });
 
   // Cargar sesión inicial
@@ -1522,25 +1463,25 @@ async function openMyOrders() {
   await refreshAuthState();
   await loadProductsFromDB();
 
-  // Menús + render
   renderCategoriesMenu();
   renderCategoriesSidebar();
   renderProducts();
   updateCart();
   syncPaymentButtons();
 
-  // Reaccionar a cambios auth
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
     currentSession = session;
-    // ✅ limpiar búsqueda al loguear/desloguear para que no filtre a "0 resultados"
+
+    // limpiar búsqueda
     searchTerm = '';
-    const ns = document.getElementById('navSearch');
+    const ns = $('navSearch');
     if (ns) ns.value = '';
 
     await refreshAuthState();
     await loadProductsFromDB();
 
     renderCategoriesMenu();
+    closeCategoriesMenu();
     renderCategoriesSidebar();
     renderProducts();
 
@@ -1548,4 +1489,3 @@ async function openMyOrders() {
     syncPaymentButtons();
   });
 })();
-

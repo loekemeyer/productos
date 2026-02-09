@@ -11,6 +11,18 @@ body {
   padding-top: 86px;
 }
 
+*,
+*::before,
+*::after{
+  box-sizing: border-box;
+}
+
+html, body{
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 /* ================= HEADER ================= */
 
 /* Si existe en HTML, lo ocultamos */
@@ -1354,3 +1366,703 @@ body {
   #ctaCliente{ display: none !important; } /* si solo querés CTA dentro del menú mobile */
 }
 
+#loginBtn{
+  white-space: nowrap;
+}
+
+#ctaCliente,
+#loginBtn{
+  white-space: nowrap;
+}
+
+#loginBtn,
+#ctaCliente{
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Alineación perfecta entre "Quiero ser cliente" y "Iniciar sesión" */
+.nav-right{
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Estilo link (pero con alto de botón) */
+#loginBtn{
+  padding: 0;               /* si querés que quede como texto sin caja, comentá las 2 líneas de abajo */
+  height: auto;             /* y esta también */
+}
+
+#loginBtn{
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  padding: 0 14px;
+  height: 36px;
+}
+
+#loginBtn:hover{
+  background: rgba(255,255,255,0.08);
+}
+
+/* Contenedor derecho del nav */
+.nav-right{
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Base común para ambos botones */
+#ctaCliente,
+#loginBtn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 10px;   /* mismo radio que el blanco */
+  white-space: nowrap;
+  line-height: 1;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+/* Botón blanco: "Quiero ser cliente" */
+#ctaCliente{
+  background: #fff;
+  color: #111;
+  border: 1px solid #e6e6e6;
+}
+
+#ctaCliente:hover{
+  background: #f5f5f5;
+}
+
+/* Botón negro: "Iniciar sesión" */
+#loginBtn{
+  background: #0b0b0b;
+  color: #fff;
+  border: 1px solid #0b0b0b;
+}
+
+#loginBtn:hover{
+  background: #1a1a1a;
+}
+
+/* Fuerza centrado perfecto de ambos botones del nav-right */
+#ctaCliente,
+#loginBtn{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  height: 36px !important;
+  padding: 0 16px !important;
+
+  border-radius: 10px !important;
+  box-sizing: border-box !important;
+
+  line-height: 36px !important;   /* <- esto mata cualquier “descentrado” visual */
+  text-decoration: none !important;
+  white-space: nowrap !important;
+}
+
+/* Blanco */
+#ctaCliente{
+  background: #fff !important;
+  color: #111 !important;
+  border: 1px solid #e6e6e6 !important;
+}
+
+/* Negro */
+#loginBtn{
+  background: #0b0b0b !important;
+  color: #fff !important;
+  border: 1px solid #0b0b0b !important;
+}
+
+/* md/sm: ocultar CTA blanco y dejar solo login */
+@media (max-width: 900px){
+  #ctaCliente{ display: none !important; }
+  #loginBtn{ display: inline-flex !important; }
+}
+
+/* md/sm: colapsar nav-center y centrar el hamburger */
+@media (max-width: 900px){
+  .nav-center{ display: none !important; }
+
+  /* centrado real */
+  #hamburgerBtn{
+    display: inline-flex !important;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* el menú desplegable queda anclado cerca del botón */
+  #mobileMenu{
+    right: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%);
+  }
+}
+
+.modal-cta{
+  margin-top: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+@media (min-width: 901px){
+  #mobileMenu{ display: none !important; }
+}
+
+/* DESKTOP: nunca mostrar menú mobile ni hamburger */
+@media (min-width: 901px){
+  #mobileMenu{ display: none !important; }
+  #hamburgerBtn{ display: none !important; }
+}
+
+.modal-cta{
+  width: 100%;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+@media (max-width: 900px){
+  .nav-center{ display: none !important; }
+
+  #hamburgerBtn{
+    display: inline-flex !important;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  #mobileMenu{
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
+  }
+
+  #ctaCliente{ display: none !important; }  /* CTA solo en modal */
+  #loginBtn{ display: inline-flex !important; }
+}
+
+/* Desktop: ocultar mobileMenu/hamburger */
+@media (min-width: 901px){
+  #mobileMenu{ display: none !important; }
+  #hamburgerBtn{ display: none !important; }
+}
+
+@media (max-width: 900px){
+
+  /* Logo deja de ser absolute en mobile */
+  .logo{
+    position: static !important;
+    margin: 0 auto !important;
+  }
+
+  /* Header en modo 3 columnas: logo al centro */
+  .header{
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 12px 16px !important;
+  }
+
+  /* Hamburguesa a la derecha (no se pisa con el logo) */
+  #hamburgerBtn{
+    position: absolute !important;
+    right: 12px !important;
+    left: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+
+  /* Menu desplegable anclado a la derecha */
+  #mobileMenu{
+    left: auto !important;
+    right: 12px !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 900px){
+  .logo-img{ height: 46px !important; }
+}
+
+/* ===== MOBILE / TABLET ===== */
+@media (max-width: 900px){
+
+  /* asegurar header visible */
+  .header{
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
+  /* ocultar centro */
+  .nav-center{
+    display: none !important;
+  }
+
+  /* LOGO centrado */
+  .logo{
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 5;
+  }
+
+  /* HAMBURGUESA VISIBLE Y ARRIBA */
+  #hamburgerBtn{
+    display: inline-flex !important;
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 10 !important;
+  }
+
+  /* menú desplegable */
+  #mobileMenu{
+    display: none;
+    position: absolute;
+    top: 74px;
+    right: 12px;
+    z-index: 20;
+  }
+
+  #mobileMenu.open{
+    display: block;
+  }
+
+  /* botones derecha ocultos */
+  #ctaCliente,
+  #loginBtn{
+    display: none !important;
+  }
+}
+
+.header,
+.nav{
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 900px){
+  .header{
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+@media (max-width: 900px){
+  #hamburgerBtn{
+    right: 12px !important;
+    max-width: 44px;
+  }
+}
+
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+@media (max-width: 900px){
+  .products-layout{
+    padding: 0 12px !important;
+  }
+
+  .category-title{
+    margin-left: 12px !important;
+    margin-right: 12px !important;
+  }
+}
+
+@media (max-width: 900px){
+  /* Cualquier bloque que ocupa toda la fila en la grilla (subtítulos) no puede tener margen lateral */
+  .products-grid > div[style*="grid-column: 1 / -1"]{
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+.products-main,
+.products-grid,
+.product-card{
+  min-width: 0;
+}
+
+.product-card img{
+  max-width: 100%;
+}
+
+.product-card img{
+  width: 90%;
+  height: auto;
+  margin: 0 auto;
+  display: block;
+}
+
+/* =========================
+   MOBILE: Categorías en 2 columnas (panel compacto)
+   ========================= */
+@media (max-width: 900px){
+
+  /* el dropdown de categorías NO ocupa toda la pantalla */
+  #categoriesMenu.dropdown-menu{
+    position: fixed !important;
+    top: 92px !important;           /* debajo del header */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+
+    width: min(360px, calc(100vw - 24px)) !important;
+    max-height: 60vh !important;
+    overflow: auto !important;
+
+    padding: 10px !important;
+    border-radius: 14px !important;
+    z-index: 6000 !important;
+  }
+
+  /* fila "Todos" más compacta */
+  .dd-toggle-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  /* contenedor que ya tenés dentro (div padding:6px) */
+  #categoriesMenu > div{
+    padding: 0 !important; /* para que no meta padding extra */
+  }
+
+  /* separador */
+  .dd-sep{
+    height: 1px;
+    background: #eee;
+    margin: 8px 0;
+  }
+
+  /* ===== 2 columnas para las categorías ===== */
+  .dd-cats-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* estilo chip/botón */
+  .dd-chip{
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    width: 100%;
+    padding: 10px 10px;
+    border-radius: 12px;
+
+    border: 1px solid #e6e6e6;
+    background: #fff;
+    cursor: pointer;
+
+    font-size: 13px;
+    line-height: 1.1;
+    user-select: none;
+  }
+
+  .dd-chip:hover{
+    background: #f6f6f6;
+  }
+
+  /* estado ON (cuando checkbox esté tildado) */
+  .dd-chip:has(input:checked){
+    border-color: #111;
+    background: #efefef;
+    font-weight: bold;
+  }
+
+  /* ocultamos el checkbox visual pero sigue funcionando */
+  .dd-chip input{
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    display: inline-block;
+  }
+
+  .dd-chip input:checked{
+    background: #111;
+    border-color: #111;
+  }
+}
+
+/* Asegura que el dropdown de categorías solo se vea con .open */
+#categoriesMenu{ display: none !important; }
+#categoriesMenu.open{ display: block !important; }
+
+.dd-cats-grid{
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+@media (max-width: 900px){
+
+  /* El aside ya no tiene que ocupar tanto espacio */
+  .categories-sidebar{
+    padding: 10px !important;
+  }
+
+  /* 2 columnas */
+  #categoriesSidebarList.sidebar-list{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Botón chip compacto */
+  .sidebar-link{
+    width: 100% !important;
+    padding: 10px 10px !important;
+    border: 1px solid #e6e6e6 !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    font-size: 13px !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+    text-align: left !important;
+  }
+
+  .sidebar-link:hover{
+    background: #f6f6f6 !important;
+  }
+
+  .sidebar-link.active{
+    border-color: #111 !important;
+    background: #efefef !important;
+    font-weight: bold !important;
+  }
+}
+
+@media (max-width: 900px){
+  .categories-sidebar{
+    max-height: 42vh !important;
+    overflow: auto !important;
+  }
+}
+
+@media (max-width: 900px){
+  /* 1) En mobile NO se ve el sidebar fijo */
+  .categories-sidebar{
+    display: none !important;
+  }
+
+  /* 2) Panel de filtros como modal/popup */
+  .filters-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 7000;
+    padding: 96px 12px 12px; /* debajo del header */
+  }
+
+  .filters-overlay.open{ display: flex; }
+
+  .filters-panel{
+    width: min(380px, calc(100vw - 24px));
+    max-height: 70vh;
+    overflow: auto;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+    padding: 12px;
+  }
+
+  .filters-panel .sidebar-title{
+    margin-bottom: 10px;
+  }
+
+  .filters-panel .sidebar-list{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+/* Botón Filtros: solo mobile/tablet */
+.filters-btn{ display: none; }
+
+@media (max-width: 900px){
+  .filters-btn{
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #111;
+    background: #fff;
+    color: #111;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .sort-row{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 0 12px;
+  }
+
+  .sort-label{
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 900px){
+  .filters-actions{
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding-top: 10px;
+    margin-top: 12px;
+    border-top: 1px solid #eee;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .filters-cancel,
+  .filters-apply{
+    padding: 12px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .filters-cancel{
+    background: #fff;
+    border: 1px solid #111;
+    color: #111;
+  }
+
+  .filters-apply{
+    background: #111;
+    border: 1px solid #111;
+    color: #fff;
+  }
+}
+
+/* ===== Mobile Filters ===== */
+.open-filters-btn{
+  display:none;
+  height:40px;
+  padding:0 14px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  background:#fff;
+  font-weight:700;
+}
+
+@media (max-width: 1024px){
+  .open-filters-btn{ display:inline-flex; align-items:center; justify-content:center; }
+}
+
+.filters-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  z-index:9999;
+}
+
+.filters-overlay.open{ display:flex; align-items:flex-end; justify-content:center; }
+
+.filters-panel{
+  width:100%;
+  max-width:560px;
+  background:#fff;
+  border-radius:18px 18px 0 0;
+  padding:14px 14px 18px;
+  box-shadow:0 -10px 30px rgba(0,0,0,.25);
+  max-height:86vh;
+  overflow:auto;
+}
+
+.filters-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.filters-title{ font-size:18px; font-weight:800; }
+.filters-x{
+  width:38px; height:38px;
+  border-radius:12px;
+  border:1px solid #eee;
+  background:#fff;
+}
+
+.filters-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr; /* 2 columnas */
+  gap:10px;
+  padding:6px 0 12px;
+}
+
+.mf-btn{
+  height:40px;
+  padding:0 10px;
+  border-radius:12px;
+  border:1px solid #e5e5e5;
+  background:#fff;
+  font-weight:700;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.mf-btn.on{
+  border-color:#111;
+  background:#111;
+  color:#fff;
+}
+
+.filters-actions{
+  position:sticky;
+  bottom:0;
+  background:#fff;
+  padding-top:10px;
+}
+
+.filters-apply{
+  width:100%;
+  height:44px;
+  border-radius:14px;
+  border:none;
+  background:#111;
+  color:#fff;
+  font-weight:800;
+}
