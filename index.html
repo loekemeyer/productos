@@ -24,9 +24,16 @@
     <div class="nav-center">
 
       <input id="navSearch" class="nav-search" type="search"
-        placeholder="Buscar…" name="catalog_search" inputmode="search"
-        autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
-        aria-label="Buscar productos">
+      placeholder="Buscar…"
+      name="catalog_q"
+      autocomplete="off"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      inputmode="search"
+      aria-autocomplete="none"
+      data-form-type="other"
+      list="">
 
       <div class="dropdown-wrap">
         <a id="categoriesBtn">Categorías ▾</a>
@@ -41,17 +48,19 @@
       </a>
     </div>
 
-    <!-- HAMBURGER (mobile/tablet) -->
-    <button id="hamburgerBtn" class="hamburger" type="button" aria-label="Menú" aria-expanded="false">
-      ☰
-    </button>
+    <!-- ✅ MOBILE ICONS: Carrito + Perfil (reemplaza hamburguesa) -->
+    <div id="mobileIcons" class="mobile-icons" aria-label="Accesos rápidos">
+      <button id="mobileCartBtn" class="micon-btn micon-cart" type="button" aria-label="Pedido">
+        <img class="micon-cart-img" src="img/cart-icon.webp" alt="">
+        <span class="micon-cart-text">Pedido</span>
+      (<span id="mobileCartCount">0</span>)
+      </button>
 
-    <!-- MENU HAMBURGER (solo 3 opciones) -->
-    <div id="mobileMenu" class="mobile-menu" aria-hidden="true">
-      <button class="mobile-item" type="button" onclick="toggleCategoriesMenu(); closeMobileMenu();">Categorías</button>
-      <button class="mobile-item" type="button" onclick="goToProductsTop(); closeMobileMenu();">Productos</button>
-      <button class="mobile-item" type="button" onclick="showSection('carrito'); closeMobileMenu();">Pedido</button>
-    </div>
+  <button id="mobileProfileBtn" class="micon-btn micon-profile" type="button" aria-label="Perfil">
+    <img src="img/profile.jpg" alt="Perfil" class="profile-avatar">
+  </button>
+</div>
+
 
     <!-- DERECHA (desktop): CTA + Login o UserBox -->
     <div class="nav-right">
@@ -70,14 +79,39 @@
         </button>
 
         <div class="user-menu" id="userMenu" aria-hidden="true">
-          <button id="menuMyOrders" class="user-menu-item" type="button" onclick="openMyOrders()">Mis pedidos</button>
-          <button class="user-menu-item" type="button" onclick="logout()">Cerrar sesión</button>
-        </div>
+  <button id="menuMyOrders" class="user-menu-item" type="button" onclick="openMyOrders()">Mis pedidos</button>
+
+  <button id="menuChangePass" class="user-menu-item" type="button" onclick="openChangePassword()">
+    Cambiar contraseña
+  </button>
+
+  <div class="user-menu-sep" role="separator" aria-hidden="true"></div>
+
+  <button class="user-menu-item danger" type="button" onclick="logout()">Cerrar sesión</button>
+</div>
+
       </div>
     </div>
 
   </nav>
 </header>
+
+<!-- ✅ MOBILE USER MENU (fuera de nav-right) -->
+<div class="user-menu mobile-user-menu" id="mobileUserMenu" aria-hidden="true">
+  <button class="user-menu-item" type="button" onclick="openMyOrders(); closeMobileUserMenu();">
+    Mis pedidos
+  </button>
+
+  <button class="user-menu-item" type="button" onclick="openChangePassword(); closeMobileUserMenu();">
+    Cambiar contraseña
+  </button>
+
+  <div class="user-menu-sep" role="separator" aria-hidden="true"></div>
+
+  <button class="user-menu-item danger" type="button" onclick="logout(); closeMobileUserMenu();">
+    Cerrar sesión
+  </button>
+</div>
 
 <!-- PRODUCTOS -->
 <section id="productos" class="section active">
@@ -96,6 +130,35 @@
 
     <main class="products-main">
       <div class="sort-row">
+          <!-- ✅ Toolbar SOLO MOBILE (no afecta desktop) -->
+        <div class="mobile-toolbar" id="mobileToolbar" aria-label="Buscador y acciones">
+        <div id="mobileSearchCE"
+        class="mobile-search mobile-search-ce"
+        contenteditable="true"
+        role="searchbox"
+        aria-label="Buscar productos"
+        data-placeholder="Buscar…"></div>
+
+
+    <div class="mobile-actions" aria-label="Acciones">
+      <button id="mobileFiltersBtn" class="mtool-btn mtool-filters" type="button" aria-haspopup="dialog">
+        Filtros
+      </button>
+      <div class="mtool-sort-wrap" aria-label="Ordenar">
+  <div class="mtool-btn mtool-sort" aria-hidden="true">Ordenar</div>
+
+  <!-- Select invisible arriba: el usuario toca ESTO (abre siempre) -->
+  <select id="mobileSortSelect" class="mtool-select" aria-label="Ordenar por">
+    <option value="category" selected>Categorías</option>
+    <option value="bestsellers">Más Vendidos</option>
+    <option value="price_desc">Mayor precio por categoría</option>
+    <option value="price_asc">Menor precio por categoría</option>
+  </select>
+</div>
+
+    </div>
+  </div>
+
         <label class="sort-label" for="sortSelect">Ordenar por</label>
 
         <!-- ✅ Botón Filtros (solo mobile/tablet por CSS) -->

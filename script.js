@@ -120,6 +120,19 @@ function closeMobileMenu() {
   toggleMobileMenu(false);
 }
 
+function closeMobileUserMenu(){
+  const m = $('mobileUserMenu');
+  if (m) { m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); }
+}
+function toggleMobileUserMenu(){
+  const m = $('mobileUserMenu');
+  if (!m) return;
+  const willOpen = !m.classList.contains('open');
+  m.classList.toggle('open', willOpen);
+  m.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
+}
+window.closeMobileUserMenu = closeMobileUserMenu;
+
 /***********************
  * SECTIONS
  ***********************/
@@ -132,6 +145,7 @@ function showSection(id) {
   closeUserMenu();
   closeMobileMenu();
   closeFiltersOverlay();
+  closeMobileUserMenu();
 }
 
 function goToProductsTop() {
@@ -740,71 +754,86 @@ function renderProducts() {
     const totalUni = qty * Number(p.uxb || 0);
 
     return `
-      <div class="product-card" id="card-${pid}">
-        ${isNuevo ? `<div class="badge-nuevo">NUEVO</div>` : ``}
+  <div class="product-card" id="card-${pid}">
+    ${isNuevo ? `<div class="badge-nuevo">NUEVO</div>` : ``}
 
-        <img id="img-${pid}"
-             src="${imgSrc}"
-             alt="${String(p.description || '')}"
-             onerror="this.onerror=null;this.src='${imgFallback}'">
+    <img id="img-${pid}"
+         src="${imgSrc}"
+         alt="${String(p.description || '')}"
+         onerror="this.onerror=null;this.src='${imgFallback}'">
 
-        <div class="product-info">
-          <div class="product-cod">Cod: <span>${codSafe}</span></div>
-          <div class="product-name">${String(p.description || '')}</div>
-
-          <div class="${logged ? '' : 'price-hidden'}">
-            Precio Lista: <span>$${formatMoney(p.list_price)}</span><br>
-            Tu Precio: <span>$${formatMoney(tuPrecio)}</span><br>
-            UxB: <span>${p.uxb}</span>
-          </div>
-
-          <div class="${logged ? 'price-hidden' : ''}">
-            <div class="price-locked">Inicia sesión para ver precios</div>
-            UxB: <span>${p.uxb}</span>
-          </div>
-        </div>
-
-        ${qty <= 0 ? `
-          <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
-            Agregar al pedido
-          </button>
-        ` : `
-          <div class="qty-panel" id="qty-${pid}">
-            <div class="qty-row">
-              <span class="qty-label">Cajas</span>
-
-              <div class="qty-stepper">
-                <button type="button" class="qty-btn" onclick="changeQty('${pid}', -1)">−</button>
-                <input class="qty-input" type="number" min="1" step="1" value="${qty}"
-                       inputmode="numeric"
-                       onchange="manualQty('${pid}', this.value)">
-                <button type="button" class="qty-btn" onclick="changeQty('${pid}', 1)">+</button>
-              </div>
-            </div>
-
-            <div class="qty-meta">
-              <span>UxB: <strong>${p.uxb}</strong></span>
-              <span>Unidades: <strong>${formatMoney(totalUni)}</strong></span>
-            </div>
-
-            <div class="qty-chips">
-              <button type="button" class="chip" onclick="changeQty('${pid}', 5)">+5</button>
-              <button type="button" class="chip" onclick="changeQty('${pid}', 10)">+10</button>
-            </div>
-
-            <div class="qty-actions">
-              <button type="button" class="go-cart-btn" onclick="showSection('carrito')">
-                Ver pedido (${qty})
-              </button>
-
-              <button type="button" class="remove-btn" onclick="removeItem('${pid}')">
-                Quitar
-              </button>
-            </div>
-          </div>
-        `}
+    <!-- TOP INFO -->
+    <div class="card-top">
+      <div class="card-row">
+        <div class="card-cod">Cod: <span>${codSafe}</span></div>
+        <div class="card-uxb">UxB: <span>${p.uxb}</span></div>
       </div>
-    `;
+
+      <div class="card-desc">${String(p.description || '')}</div>
+
+      <div class="${logged ? '' : 'price-hidden'} card-prices">
+        <div class="card-price-line">Precio Lista: <strong>$${formatMoney(p.list_price)}</strong></div>
+        <div class="card-price-line">Tu Precio: <strong>$${formatMoney(tuPrecio)}</strong></div>
+      </div>
+
+      <div class="${logged ? 'price-hidden' : ''} card-prices">
+        <div class="price-locked">Inicia sesión para ver precios</div>
+      </div>
+    </div>
+
+    ${qty <= 0 ? `
+      <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
+        Agregar al pedido
+      </button>
+    ` : `
+  <!-- BOTTOM CART BAR (PRO) -->
+<div class="card-cartbar" id="qty-${pid}">
+
+  <!-- SUBTOTAL (arriba) -->
+  <div class="cartbar-top">
+    <div class="cartbar-label">Subtotal</div>
+
+    <div class="cartbar-subtotal">
+      <strong class="cartbar-subv">
+        $${formatMoney((logged ? (unitYourPrice(p.list_price) * (qty * Number(p.uxb || 0))) : 0))}
+      </strong>
+      <span class="cartbar-iva">+ IVA</span>
+    </div>
+  </div>
+
+  <!-- STEPPER (medio) -->
+  <div class="cartbar-controls">
+    <div class="cartbar-left">
+      <div class="cartbar-stepper">
+        <button type="button" class="step-btn" onclick="changeQty('${pid}', -1)">−</button>
+
+        <input class="step-input" type="number" min="1" step="1" value="${qty}"
+               inputmode="numeric"
+               onchange="manualQty('${pid}', this.value)">
+
+        <button type="button" class="step-btn" onclick="changeQty('${pid}', 1)">+</button>
+      </div>
+
+      <!-- +5 (se oculta en mobile/tablet por CSS) -->
+      <button type="button" class="chip chip-5" onclick="changeQty('${pid}', 5)">+5</button>
+    </div>
+  </div>
+
+  <!-- UNIDADES (abajo) -->
+  <div class="cartbar-units">
+    Unidades: <strong>${formatMoney(totalUni)}</strong>
+  </div>
+
+  <!-- QUITAR (último) -->
+  <button type="button" class="remove-btn remove-compact" onclick="removeItem('${pid}')">
+    Quitar
+  </button>
+
+</div>
+
+`}
+  </div>
+`;
   };
 
   // 🔥 Más vendidos: ranking global, pero respeta filtros aplicados (list)
@@ -1200,6 +1229,8 @@ function updateCart() {
   let count = 0;
   cart.forEach(i => count += i.qtyCajas);
   $('cartCount') && ($('cartCount').innerText = count);
+  $('mobileCartCount') && ($('mobileCartCount').innerText = count);
+
 
   const btn = $('submitOrderBtn');
   if (btn) {
@@ -1327,6 +1358,12 @@ async function openMyOrders() {
   showSection('productos');
 }
 
+function openChangePassword() {
+  setOrderStatus('Cambiar contraseña: lo configuramos después.', 'err');
+  closeUserMenu();
+}
+window.openChangePassword = openChangePassword;
+
 /***********************
  * INIT
  ***********************/
@@ -1397,6 +1434,27 @@ async function openMyOrders() {
     updateCart();
   });
 
+    // ✅ Mobile: carrito -> Pedido
+  $('mobileCartBtn')?.addEventListener('click', () => {
+    showSection('carrito');
+  });
+
+  // ✅ Mobile: avatar -> dropdown (si no logueado => login)
+  $('mobileProfileBtn')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  if (!currentSession) { openLogin(); return; }
+  toggleMobileUserMenu();
+  });
+
+  document.addEventListener('click', (e) => {
+  const menu = $('mobileUserMenu');
+  const btn = $('mobileProfileBtn');
+  if (!menu || !btn) return;
+
+  const inside = menu.contains(e.target) || btn.contains(e.target);
+  if (!inside) closeMobileUserMenu();
+  });
+
   const shipSel = $('shippingSelect');
   if (shipSel) {
     deliveryChoice = { slot: shipSel.value || '', label: '' };
@@ -1429,13 +1487,58 @@ async function openMyOrders() {
   });
 
   // Buscador NAV (global)
-  const navSearch = $('navSearch');
+    const navSearch = $('navSearch');
   if (navSearch) {
     navSearch.addEventListener('input', () => {
       searchTerm = String(navSearch.value || '').trim();
+
+      const ms = $('mobileSearch');
+      if (ms) ms.value = navSearch.value;
+
       renderProducts();
     });
   }
+
+    // ✅ Buscador MOBILE (mismo comportamiento que navSearch)
+  const mobileSearch = $('mobileSearch');
+  if (mobileSearch) {
+    mobileSearch.addEventListener('input', () => {
+      searchTerm = String(mobileSearch.value || '').trim();
+
+      // sincroniza por si navSearch existe (desktop)
+      const ns = $('navSearch');
+      if (ns) ns.value = mobileSearch.value;
+
+      renderProducts();
+    });
+  }
+
+  // ✅ Botón Filtros MOBILE (reusa el overlay existente)
+  $('mobileFiltersBtn')?.addEventListener('click', () => openFiltersOverlay());
+
+  // ✅ Ordenar (mobile) - el usuario toca el select invisible
+const mobSort = $('mobileSortSelect');
+if (mobSort) {
+  mobSort.addEventListener('change', () => {
+    sortMode = mobSort.value || 'category';
+
+    // sincroniza también el select desktop (si existe)
+    const sel = $('sortSelect');
+    if (sel) sel.value = sortMode;
+
+    renderProducts();
+  });
+}
+
+const deskSort = $('sortSelect');
+if (deskSort) {
+  deskSort.addEventListener('change', () => {
+    sortMode = deskSort.value || 'category';
+    const ms = $('mobileSortSelect');
+    if (ms) ms.value = sortMode;
+    renderProducts();
+  });
+}
 
   $('hamburgerBtn')?.addEventListener('click', () => { toggleMobileMenu(); });
 
@@ -1446,6 +1549,40 @@ async function openMyOrders() {
     const clickedInside = menu.contains(e.target) || btn.contains(e.target);
     if (!clickedInside) closeMobileMenu();
   });
+
+  // ✅ Buscador MOBILE sin <input> (evita Password Manager de Chrome Android)
+const mobileSearchCE = $('mobileSearchCE');
+if (mobileSearchCE) {
+
+  const syncSearch = () => {
+    const val = String(mobileSearchCE.textContent || '').replace(/\s+/g, ' ').trim();
+    searchTerm = val;
+
+    // sincroniza con navSearch (desktop)
+    const ns = $('navSearch');
+    if (ns) ns.value = val;
+
+    renderProducts();
+  };
+
+  mobileSearchCE.addEventListener('input', syncSearch);
+
+  // Enter no agrega salto de línea
+  mobileSearchCE.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      mobileSearchCE.blur();
+    }
+  });
+
+  // Si pegás texto, lo normalizamos
+  mobileSearchCE.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    document.execCommand('insertText', false, text);
+  });
+}
+
 
   // ✅ Mobile filtros: abrir/cerrar/aplicar/cancelar
   $('openFiltersBtn')?.addEventListener('click', () => openFiltersOverlay());
