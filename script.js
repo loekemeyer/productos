@@ -445,7 +445,7 @@ async function loadProductsFromDB() {
   const logged = !!currentSession;
 
   if (!logged) {
-    // Público: trae precios pero NO se muestran en UI (tu CSS + render ya lo oculta)
+    // Público: ordena via RPC
     const { data, error } = await supabaseClient.rpc('get_products_public_sorted', { p_sort: sortMode });
     if (error) {
       console.error('Error loading public products:', error);
@@ -469,7 +469,7 @@ async function loadProductsFromDB() {
           ? null
           : Number(p.orden_catalogo),
       description: p.description,
-      list_price: p.list_price, // viene pero NO se muestra si no loguea
+      list_price: p.list_price,
       uxb: p.uxb,
       images: Array.isArray(p.images) ? p.images : [],
     }));
@@ -477,15 +477,33 @@ async function loadProductsFromDB() {
     return;
   }
 
-  const { data, error } = await supabaseClient
+  // ✅ LOGUEADO: orden también según sortMode (para que no “parezca” que no ordena)
+  let q = supabaseClient
     .from('products')
     .select(
       'id,cod,category,subcategory,ranking,orden_catalogo,description,list_price,uxb,images,active'
     )
-    .eq('active', true)
-    .order('category', { ascending: true })
-    .order('orden_catalogo', { ascending: true, nullsFirst: false })
-    .order('description', { ascending: true });
+    .eq('active', true);
+
+  if (sortMode === 'bestsellers') {
+    q = q.order('ranking', { ascending: true, nullsFirst: false });
+ } else if (sortMode === 'price_desc') {
+  q = q.order('category', { ascending: true });
+  q = q.order('list_price', { ascending: false, nullsFirst: false });
+  q = q.order('orden_catalogo', { ascending: true, nullsFirst: false });
+} else if (sortMode === 'price_asc') {
+  q = q.order('category', { ascending: true });
+  q = q.order('list_price', { ascending: true, nullsFirst: false });
+  q = q.order('orden_catalogo', { ascending: true, nullsFirst: false });
+}
+ else {
+    // category (como lo tenías)
+    q = q.order('category', { ascending: true });
+    q = q.order('orden_catalogo', { ascending: true, nullsFirst: false });
+    q = q.order('description', { ascending: true });
+  }
+
+  const { data, error } = await q;
 
   if (error) {
     console.error('Error loading products:', error);
@@ -940,7 +958,7 @@ function getFilteredProducts() {
 }
 
 /***********************
- * RENDER PRODUCTS
+ * RENDER PRODUCTS  ✅ (FIX SORT REAL)
  ***********************/
 function renderProducts() {
   const container = $('productsContainer');
@@ -964,8 +982,6 @@ function renderProducts() {
     `;
     return;
   }
-
-  const cats = getOrderedCategoriesFrom(list);
 
   const buildCard = (p) => {
     const pid = String(p.id);
@@ -1072,20 +1088,24 @@ function renderProducts() {
     `;
   };
 
-  if (sortMode === 'bestsellers') {
-    const items = [...list].sort((a, b) => {
-      const ar = a.ranking == null || String(a.ranking).trim() === '' ? 999999 : Number(a.ranking);
-      const br = b.ranking == null || String(b.ranking).trim() === '' ? 999999 : Number(b.ranking);
-      return ar - br || String(a.description || '').localeCompare(String(b.description || ''), 'es');
-    });
+   // ✅ SOLO bestsellers en grilla global (opcional)
+if (sortMode === 'bestsellers') {
+  let items = [...list];
+  items.sort(getSortComparator());
 
-    container.innerHTML = `
-      <div class="products-grid">
-        ${items.map(buildCard).join('')}
-      </div>
-    `;
-    return;
-  }
+  container.innerHTML = `
+    <div class="products-grid">
+      ${items.map(buildCard).join('')}
+    </div>
+  `;
+  return;
+}
+
+// ✅ Para price_asc / price_desc: NO global.
+// Sigue el render por categorías (más abajo) y ordena dentro de cada categoría.
+
+  // ✅ Modo category (bloques por categoría)
+  const cats = getOrderedCategoriesFrom(list);
 
   cats.forEach((category) => {
     const block = document.createElement('div');
@@ -1093,9 +1113,12 @@ function renderProducts() {
 
     const catId = `cat-${slugifyCategory(category)}`;
 
-    const items = list
-      .filter((p) => String(p.category || '').trim() === String(category).trim())
-      .sort(getSortComparator());
+    let items = list.filter(
+      (p) => String(p.category || '').trim() === String(category).trim()
+    );
+
+    // category: ordenar dentro de cada categoría
+    items = items.sort(getSortComparator());
 
     if (!items.length) return;
 
@@ -1509,7 +1532,6 @@ function updateCart() {
 
 /***********************
  * SEND TO SHEETS + SUBMIT ORDER
- * (igual que tu versión; no tocado)
  ***********************/
 async function sendOrderToSheets({ codCliente, vend, condicionPago, sucursalEntrega, items }) {
   if (!SHEETS_WEBAPP_URL || !SHEETS_SECRET) return;
@@ -1698,7 +1720,7 @@ function openChangePassword() {
 window.openChangePassword = openChangePassword;
 
 /***********************
- * INIT (arranque de la web) — CORREGIDO
+ * INIT (arranque de la web) — CORREGIDO ✅
  ***********************/
 document.addEventListener('DOMContentLoaded', async () => {
   // Exponer funciones al HTML (onclick)
@@ -1716,27 +1738,48 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.updateCart = updateCart;
   window.submitOrder = submitOrder;
 
-  // ✅ DESKTOP: Ordenar por (select)
-  const sortSel = $('sortSelect');
-  if (sortSel) {
-    sortSel.addEventListener('change', async () => {
-      sortMode = String(sortSel.value || 'category');
-      await loadProductsFromDB();
-      renderProducts();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+  // =============================
+  // SORT (desktop botones + selects + mobile) ✅ ÚNICO BLOQUE
+  // =============================
+  function applySortUI() {
+    const wrap = $('desktopSortButtons');
+    if (wrap) {
+      wrap.querySelectorAll('.ds-btn').forEach((b) => {
+        b.classList.toggle('active', b.dataset.sort === sortMode);
+      });
+    }
+
+    const s1 = $('sortSelect');
+    if (s1) s1.value = sortMode;
+
+    const s2 = $('mobileSortSelect');
+    if (s2) s2.value = sortMode;
   }
 
-  // ✅ MOBILE: Ordenar (select)
-  const mobSort = $('mobileSortSelect');
-  if (mobSort) {
-    mobSort.addEventListener('change', async () => {
-      sortMode = String(mobSort.value || 'category');
-      await loadProductsFromDB();
-      renderProducts();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+  async function setSortMode(next) {
+    sortMode = String(next || 'category');
+    applySortUI();
+
+    await loadProductsFromDB();
+    renderProducts();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  $('desktopSortButtons')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.ds-btn');
+    if (!btn) return;
+    await setSortMode(btn.dataset.sort);
+  });
+
+  $('sortSelect')?.addEventListener('change', async (e) => {
+    await setSortMode(e.target.value);
+  });
+
+  $('mobileSortSelect')?.addEventListener('change', async (e) => {
+    await setSortMode(e.target.value);
+  });
+
+  applySortUI();
 
   // CUIT live format
   function formatCUITLive(value) {
@@ -1768,7 +1811,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     toggleCategoriesMenu();
   });
 
-  // ✅ MENÚ USUARIO DESKTOP (FIX: evita que se cierre instantáneamente)
+  // ✅ MENÚ USUARIO DESKTOP
   const profileBtnEl = $('profileBtn');
   const helloBtnEl = $('helloNavBtn');
   const userMenuEl = $('userMenu');

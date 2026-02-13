@@ -109,38 +109,32 @@
 
         <main class="products-main">
           <div class="sort-row">
-            <!-- ✅ Toolbar SOLO MOBILE -->
-            <div class="mobile-toolbar" id="mobileToolbar" aria-label="Buscador y acciones">
-              <div id="mobileSearchCE" class="mobile-search mobile-search-ce" contenteditable="true"
-                   role="searchbox" aria-label="Buscar productos" data-placeholder="Buscar…"></div>
-              <div class="mobile-actions" aria-label="Acciones">
-                <button id="mobileFiltersBtn" class="mtool-btn mtool-filters" type="button" aria-haspopup="dialog">
-                  Filtros
-                </button>
-                <div class="mtool-sort-wrap" aria-label="Ordenar">
-                  <div class="mtool-btn mtool-sort" aria-hidden="true">Ordenar</div>
-                  <select id="mobileSortSelect" class="mtool-select" aria-label="Ordenar por">
-                    <option value="category" selected>Categorías</option>
-                    <option value="bestsellers">Más Vendidos</option>
-                    <option value="price_desc">Mayor precio por categoría</option>
-                    <option value="price_asc">Menor precio por categoría</option>
-                  </select>
-                </div>
-              </div>
-            </div>
 
-            <label class="sort-label" for="sortSelect">Ordenar por</label>
-            <button id="openFiltersBtn" class="filters-btn" type="button" aria-haspopup="dialog">Filtros</button>
+  <!-- DESKTOP: BOTONES -->
+  <div id="desktopSortButtons" class="desktop-sort-buttons" aria-label="Ordenar por">
+    <button type="button" class="ds-btn" data-sort="category">Categorías</button>
+    <button type="button" class="ds-btn" data-sort="bestsellers">Más vendidos</button>
+    <button type="button" class="ds-btn" data-sort="price_desc">Mayor a menor</button>
+    <button type="button" class="ds-btn" data-sort="price_asc">Menor a mayor</button>
+  </div>
 
-            <div class="sort-wrap">
-              <select id="sortSelect" class="sort-select">
-                <option value="category" selected>Categorías</option>
-                <option value="bestsellers">Más Vendidos</option>
-                <option value="price_desc">Mayor precio por categoría</option>
-                <option value="price_asc">Menor precio por categoría</option>
-              </select>
-            </div>
-          </div>
+  <!-- MOBILE: Filtros -->
+  <button id="openFiltersBtn" class="filters-btn" type="button" aria-haspopup="dialog">
+    Filtros
+  </button>
+
+  <!-- SELECT (Fallback + mobile toolbar compatibilidad) -->
+  <div class="sort-wrap">
+    <select id="sortSelect" class="sort-select" aria-label="Ordenar por">
+      <option value="category" selected>Categorías</option>
+      <option value="bestsellers">Más Vendidos</option>
+      <option value="price_desc">Mayor precio por categoría</option>
+      <option value="price_asc">Menor precio por categoría</option>
+    </select>
+  </div>
+
+</div>
+
 
           <!-- ✅ Overlay filtros -->
           <div id="filtersOverlay" class="filters-overlay" aria-hidden="true">
