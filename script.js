@@ -3,16 +3,28 @@
 /***********************
  * SUPABASE CONFIG
  ***********************/
-const SUPABASE_URL = "https://kwkclwhmoygunqmlegrg.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3a2Nsd2htb3lndW5xbWxlZ3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MjA2NzUsImV4cCI6MjA4NTA5NjY3NX0.soqPY5hfA3RkAJ9jmIms8UtEGUc4WpZztpEbmDijOgU";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = 'https://kwkclwhmoygunqmlegrg.supabase.co';
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3a2Nsd2htb3lndW5xbWxlZ3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MjA2NzUsImV4cCI6MjA4NTA5NjY3NX0.soqPY5hfA3RkAJ9jmIms8UtEGUc4WpZztpEbmDijOgU';
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+/***********************
+ * GOOGLE SHEETS (APPS SCRIPT)
+ ***********************/
+const SHEETS_WEBAPP_URL =
+  'https://script.google.com/macros/s/AKfycby2LCHETP7mdN1En4mNtUaPRP-Aij6meoReh_-X_DnAI3BoF41HoXVfF5p-Oet97HAg/exec'; // termina en /exec
+const SHEETS_SECRET = 'Damian.10.2026.WEB';
 
 /***********************
  * UI CONSTANTS
  ***********************/
 const WEB_ORDER_DISCOUNT = 0.025; // 2.5% siempre
 const BASE_IMG = `${SUPABASE_URL}/storage/v1/object/public/products-images/`;
-const IMG_VERSION = "2026-02-06-2"; // cambiá esto cuando actualices imágenes
+const IMG_VERSION = '2026-02-06-2'; // cambiá esto cuando actualices imágenes
 
 /***********************
  * ORDEN FIJO (como pediste)
@@ -35,7 +47,7 @@ const CATEGORY_ORDER = [
   'Accesorios',
   'Vidrio',
   'Cuchillos de untar',
-  'Contenedores'
+  'Contenedores',
 ];
 
 const UTENSILIOS_SUB_ORDER = [
@@ -43,17 +55,18 @@ const UTENSILIOS_SUB_ORDER = [
   'Silicona',
   'Nylon Premium',
   'Inoxidable',
-  'Nylon'
+  'Nylon',
 ];
 
 /***********************
  * STATE
  ***********************/
-let products = [];            // productos cargados
-let currentSession = null;    // sesión supabase
-let isAdmin = false;          // admin flag
-let customerProfile = null;   // {id, business_name, dto_vol, ...}
-const cart = [];              // [{ productId: uuidString, qtyCajas }]
+let products = []; // productos cargados
+let currentSession = null; // sesión supabase
+let isAdmin = false; // admin flag
+let customerProfile = null; // {id, business_name, dto_vol, ...}
+
+const cart = []; // [{ productId: uuidString, qtyCajas }]
 
 // Entrega desde DB (slots 1..25)
 let deliveryChoice = { slot: '', label: '' };
@@ -61,9 +74,9 @@ let deliveryChoice = { slot: '', label: '' };
 let sortMode = 'category'; // category | bestsellers | price_desc | price_asc
 
 // Filtros UI (DESKTOP / estado aplicado)
-let filterAll = true;                 // "Todos" ON por default
-let filterCats = new Set();           // acumulativo
-let searchTerm = '';                  // buscador
+let filterAll = true; // "Todos" ON por default
+let filterCats = new Set(); // acumulativo
+let searchTerm = ''; // buscador
 
 // ===== Mobile Filters (pendientes) =====
 let pendingFilterAll = true;
@@ -72,7 +85,9 @@ let pendingFilterCats = new Set();
 /***********************
  * DOM HELPERS
  ***********************/
-function $(id) { return document.getElementById(id); }
+function $(id) {
+  return document.getElementById(id);
+}
 
 function formatMoney(n) {
   return Math.round(Number(n || 0)).toLocaleString('es-AR');
@@ -81,7 +96,9 @@ function formatMoney(n) {
 function headerTwoLine(text) {
   const parts = String(text || '').trim().split(/\s+/);
   if (parts.length >= 2) {
-    return `<span class="split-2line">${parts[0]}<br>${parts.slice(1).join(' ')}</span>`;
+    return `<span class="split-2line">${parts[0]}<br>${parts
+      .slice(1)
+      .join(' ')}</span>`;
   }
   return String(text || '');
 }
@@ -97,6 +114,7 @@ function splitTwoWords(text) {
 function setOrderStatus(message, type = '') {
   const el = $('orderStatus');
   if (!el) return;
+
   el.classList.remove('ok', 'err');
   if (type) el.classList.add(type);
   el.textContent = message || '';
@@ -110,7 +128,11 @@ function toggleMobileMenu(forceOpen) {
   const btn = $('hamburgerBtn');
   if (!menu || !btn) return;
 
-  const willOpen = (typeof forceOpen === 'boolean') ? forceOpen : !menu.classList.contains('open');
+  const willOpen =
+    typeof forceOpen === 'boolean'
+      ? forceOpen
+      : !menu.classList.contains('open');
+
   menu.classList.toggle('open', willOpen);
   menu.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
   btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
@@ -120,24 +142,31 @@ function closeMobileMenu() {
   toggleMobileMenu(false);
 }
 
-function closeMobileUserMenu(){
-  const m = $('mobileUserMenu');
-  if (m) { m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); }
-}
-function toggleMobileUserMenu(){
+function closeMobileUserMenu() {
   const m = $('mobileUserMenu');
   if (!m) return;
+
+  m.classList.remove('open');
+  m.setAttribute('aria-hidden', 'true');
+}
+
+function toggleMobileUserMenu() {
+  const m = $('mobileUserMenu');
+  if (!m) return;
+
   const willOpen = !m.classList.contains('open');
   m.classList.toggle('open', willOpen);
   m.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
 }
+
 window.closeMobileUserMenu = closeMobileUserMenu;
 
 /***********************
  * SECTIONS
  ***********************/
 function showSection(id) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.section').forEach((s) => s.classList.remove('active'));
+
   const el = $(id);
   if (el) el.classList.add('active');
 
@@ -159,9 +188,11 @@ function goToProductsTop() {
 function normalizeCUIT(cuit) {
   return String(cuit || '').trim().replace(/\s+/g, '');
 }
+
 function cuitDigits(cuit) {
   return normalizeCUIT(cuit).replace(/\D/g, '');
 }
+
 function cuitToInternalEmail(cuit) {
   const digits = cuitDigits(cuit);
   if (!digits) return '';
@@ -173,11 +204,13 @@ function cuitToInternalEmail(cuit) {
  ***********************/
 function openLogin() {
   setOrderStatus('');
+
   const err = $('loginError');
   if (err) {
     err.style.display = 'none';
     err.innerText = '';
   }
+
   $('loginModal')?.classList.add('open');
   $('loginModal')?.setAttribute('aria-hidden', 'false');
 }
@@ -193,25 +226,39 @@ async function login() {
 
   if (!cuit || !password) {
     const err = $('loginError');
-    if (err) { err.innerText = 'Completá CUIT y contraseña.'; err.style.display = 'block'; }
+    if (err) {
+      err.innerText = 'Completá CUIT y contraseña.';
+      err.style.display = 'block';
+    }
     return;
   }
 
   const email = cuitToInternalEmail(cuit);
   if (!email) {
     const err = $('loginError');
-    if (err) { err.innerText = 'CUIT inválido.'; err.style.display = 'block'; }
+    if (err) {
+      err.innerText = 'CUIT inválido.';
+      err.style.display = 'block';
+    }
     return;
   }
 
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password,
+  });
+
   if (error) {
     const err = $('loginError');
-    if (err) { err.innerText = 'CUIT o contraseña incorrectos.'; err.style.display = 'block'; }
+    if (err) {
+      err.innerText = 'CUIT o contraseña incorrectos.';
+      err.style.display = 'block';
+    }
     return;
   }
 
   currentSession = data.session || null;
+
   closeLogin();
 
   // limpiar búsqueda
@@ -221,6 +268,7 @@ async function login() {
 
   await refreshAuthState();
   await loadProductsFromDB();
+
   renderCategoriesMenu();
   renderCategoriesSidebar();
   renderProducts();
@@ -237,15 +285,15 @@ async function logout() {
 
   try {
     const signOutPromise = supabaseClient.auth.signOut().catch(() => {});
-    await Promise.race([signOutPromise, new Promise(r => setTimeout(r, 1200))]);
+    await Promise.race([signOutPromise, new Promise((r) => setTimeout(r, 1200))]);
 
     Object.keys(localStorage)
-      .filter(k => k.startsWith('sb-') && k.endsWith('-auth-token'))
-      .forEach(k => localStorage.removeItem(k));
+      .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+      .forEach((k) => localStorage.removeItem(k));
 
     Object.keys(sessionStorage)
-      .filter(k => k.startsWith('sb-') && k.endsWith('-auth-token'))
-      .forEach(k => sessionStorage.removeItem(k));
+      .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+      .forEach((k) => sessionStorage.removeItem(k));
 
     currentSession = null;
     isAdmin = false;
@@ -256,8 +304,8 @@ async function logout() {
     if ($('helloNavBtn')) $('helloNavBtn').innerText = '';
     if ($('loginBtn')) $('loginBtn').style.display = 'inline';
     if ($('userBox')) $('userBox').style.display = 'none';
-    closeUserMenu();
 
+    closeUserMenu();
     resetShippingSelect();
 
     // reset filtros
@@ -270,10 +318,10 @@ async function logout() {
     renderCategoriesSidebar();
     renderProducts();
     updateCart();
+
     showSection('productos');
 
     setTimeout(() => location.reload(), 50);
-
   } catch (e) {
     console.error('logout error:', e);
     setOrderStatus('No se pudo cerrar sesión. Probá recargando la página.', 'err');
@@ -300,13 +348,6 @@ async function refreshAuthState() {
     if ($('customerNote')) $('customerNote').innerText = '';
     if ($('menuMyOrders')) $('menuMyOrders').style.display = 'none';
 
-    const ml = $('mobileLogin');
-    const mo = $('mobileMyOrders');
-    const mlo = $('mobileLogout');
-    if (ml) ml.style.display = 'block';
-    if (mo) mo.style.display = 'none';
-    if (mlo) mlo.style.display = 'none';
-
     resetShippingSelect();
     return;
   }
@@ -321,19 +362,13 @@ async function refreshAuthState() {
 
   const { data: custRow } = await supabaseClient
     .from('customers')
-    .select('id,business_name,dto_vol,cod_cliente,cuit,direccion_fiscal,localidad,expreso,mail')
+    .select(
+      'id,business_name,dto_vol,cod_cliente,cuit,direccion_fiscal,localidad,vend,mail'
+    )
     .eq('auth_user_id', currentSession.user.id)
     .maybeSingle();
 
   customerProfile = custRow || null;
-
-  const hasSession = !!currentSession;
-  const ml = $('mobileLogin');
-  const mo = $('mobileMyOrders');
-  const mlo = $('mobileLogout');
-  if (ml) ml.style.display = hasSession ? 'none' : 'block';
-  if (mo) mo.style.display = hasSession ? 'block' : 'none';
-  if (mlo) mlo.style.display = hasSession ? 'block' : 'none';
 
   if ($('loginBtn')) $('loginBtn').style.display = 'none';
   if ($('userBox')) $('userBox').style.display = 'inline-flex';
@@ -358,6 +393,7 @@ function getDtoVol() {
   if (isAdmin) return 0;
   return Number(customerProfile?.dto_vol || 0);
 }
+
 function unitYourPrice(listPrice) {
   const dto = getDtoVol();
   return Number(listPrice || 0) * (1 - dto);
@@ -369,6 +405,7 @@ function unitYourPrice(listPrice) {
 function getPaymentDiscount() {
   const sel = $('paymentSelect');
   if (!sel) return 0;
+
   const v = parseFloat(sel.value);
   return isNaN(v) ? 0 : v;
 }
@@ -376,13 +413,15 @@ function getPaymentDiscount() {
 function getPaymentMethodText() {
   const sel = $('paymentSelect');
   if (!sel) return '';
+
   const opt = sel.options[sel.selectedIndex];
-  return (opt && opt.textContent) ? opt.textContent.trim() : '';
+  return opt?.textContent ? opt.textContent.trim() : '';
 }
 
 function setPaymentByValue(val) {
   const sel = $('paymentSelect');
   if (!sel) return;
+
   sel.value = String(val);
   syncPaymentButtons();
   updateCart();
@@ -394,7 +433,7 @@ function syncPaymentButtons() {
   if (!sel || !wrap) return;
 
   const current = String(sel.value);
-  wrap.querySelectorAll('.pay-btn').forEach(btn => {
+  wrap.querySelectorAll('.pay-btn').forEach((btn) => {
     btn.classList.toggle('active', String(btn.dataset.value) === current);
   });
 }
@@ -406,31 +445,43 @@ async function loadProductsFromDB() {
   const logged = !!currentSession;
 
   if (!logged) {
-    const { data, error } = await supabaseClient.rpc('get_products_public');
+    // Público: trae precios pero NO se muestran en UI (tu CSS + render ya lo oculta)
+    const { data, error } = await supabaseClient.rpc('get_products_public_sorted', { p_sort: sortMode });
     if (error) {
       console.error('Error loading public products:', error);
       products = [];
       return;
     }
 
-    products = (data || []).map(p => ({
+    products = (data || []).map((p) => ({
       id: p.id,
       cod: p.cod,
       category: p.category || 'Sin categoría',
       subcategory: p.subcategory,
-      ranking: (p.ranking === null || p.ranking === undefined || p.ranking === '') ? null : Number(p.ranking),
-      orden_catalogo: (p.orden_catalogo === null || p.orden_catalogo === undefined || p.orden_catalogo === '') ? null : Number(p.orden_catalogo),
+      ranking:
+        p.ranking === null || p.ranking === undefined || p.ranking === ''
+          ? null
+          : Number(p.ranking),
+      orden_catalogo:
+        p.orden_catalogo === null ||
+        p.orden_catalogo === undefined ||
+        p.orden_catalogo === ''
+          ? null
+          : Number(p.orden_catalogo),
       description: p.description,
-      list_price: null,
+      list_price: p.list_price, // viene pero NO se muestra si no loguea
       uxb: p.uxb,
-      images: Array.isArray(p.images) ? p.images : []
+      images: Array.isArray(p.images) ? p.images : [],
     }));
+
     return;
   }
 
   const { data, error } = await supabaseClient
     .from('products')
-    .select('id,cod,category,subcategory,ranking,orden_catalogo,description,list_price,uxb,images,active')
+    .select(
+      'id,cod,category,subcategory,ranking,orden_catalogo,description,list_price,uxb,images,active'
+    )
     .eq('active', true)
     .order('category', { ascending: true })
     .order('orden_catalogo', { ascending: true, nullsFirst: false })
@@ -442,18 +493,29 @@ async function loadProductsFromDB() {
     return;
   }
 
-  products = (data || []).map(p => ({
+  products = (data || []).map((p) => ({
     id: p.id,
     cod: p.cod,
     category: p.category || 'Sin categoría',
-    subcategory: (p.subcategory && String(p.subcategory).trim()) ? String(p.subcategory).trim() : null,
-    ranking: (p.ranking === null || p.ranking === undefined || p.ranking === '') ? null : Number(p.ranking),
-    orden_catalogo: (p.orden_catalogo === null || p.orden_catalogo === undefined || p.orden_catalogo === '') ? null : Number(p.orden_catalogo),
+    subcategory:
+      p.subcategory && String(p.subcategory).trim()
+        ? String(p.subcategory).trim()
+        : null,
+    ranking:
+      p.ranking === null || p.ranking === undefined || p.ranking === ''
+        ? null
+        : Number(p.ranking),
+    orden_catalogo:
+      p.orden_catalogo === null ||
+      p.orden_catalogo === undefined ||
+      p.orden_catalogo === ''
+        ? null
+        : Number(p.orden_catalogo),
     description: p.description,
     list_price: p.list_price,
     uxb: p.uxb,
     images: Array.isArray(p.images) ? p.images : [],
-    active: !!p.active
+    active: !!p.active,
   }));
 }
 
@@ -462,15 +524,15 @@ async function loadProductsFromDB() {
  ***********************/
 function getOrderedCategoriesFrom(list) {
   const presentCats = new Set(
-    list.map(p => String(p.category || '').trim()).filter(Boolean)
+    list
+      .map((p) => String(p.category || '').trim())
+      .filter(Boolean)
   );
 
-  // primero las del orden fijo que estén presentes
-  const inOrder = CATEGORY_ORDER.filter(cat => presentCats.has(cat));
+  const inOrder = CATEGORY_ORDER.filter((cat) => presentCats.has(cat));
 
-  // extras (categorías nuevas no contempladas)
   const extras = Array.from(presentCats)
-    .filter(cat => !CATEGORY_ORDER.includes(cat))
+    .filter((cat) => !CATEGORY_ORDER.includes(cat))
     .sort((a, b) => a.localeCompare(b, 'es'));
 
   return [...inOrder, ...extras];
@@ -494,30 +556,60 @@ function normalizeText(str) {
 
 function getSortComparator() {
   return (a, b) => {
-    const aOrd = (a.orden_catalogo === null || a.orden_catalogo === undefined) ? 999999 : Number(a.orden_catalogo);
-    const bOrd = (b.orden_catalogo === null || b.orden_catalogo === undefined) ? 999999 : Number(b.orden_catalogo);
+    const aOrd =
+      a.orden_catalogo === null || a.orden_catalogo === undefined
+        ? 999999
+        : Number(a.orden_catalogo);
+    const bOrd =
+      b.orden_catalogo === null || b.orden_catalogo === undefined
+        ? 999999
+        : Number(b.orden_catalogo);
 
-    const aRank = (a.ranking === null || a.ranking === undefined) ? 999999 : Number(a.ranking);
-    const bRank = (b.ranking === null || b.ranking === undefined) ? 999999 : Number(b.ranking);
+    const aRank =
+      a.ranking === null || a.ranking === undefined ? 999999 : Number(a.ranking);
+    const bRank =
+      b.ranking === null || b.ranking === undefined ? 999999 : Number(b.ranking);
 
-    const aPrice = (a.list_price === null || a.list_price === undefined) ? -1 : Number(a.list_price);
-    const bPrice = (b.list_price === null || b.list_price === undefined) ? -1 : Number(b.list_price);
+    const aPrice =
+      a.list_price === null || a.list_price === undefined
+        ? -1
+        : Number(a.list_price);
+    const bPrice =
+      b.list_price === null || b.list_price === undefined
+        ? -1
+        : Number(b.list_price);
 
     if (sortMode === 'bestsellers') {
-      return (aRank - bRank) || (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
+      return (
+        (aRank - bRank) ||
+        (aOrd - bOrd) ||
+        String(a.description || '').localeCompare(String(b.description || ''), 'es')
+      );
     }
 
     if (sortMode === 'price_desc') {
-      return (bPrice - aPrice) || (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
+      return (
+        (bPrice - aPrice) ||
+        (aOrd - bOrd) ||
+        String(a.description || '').localeCompare(String(b.description || ''), 'es')
+      );
     }
 
     if (sortMode === 'price_asc') {
       const aP = aPrice < 0 ? 999999999 : aPrice;
       const bP = bPrice < 0 ? 999999999 : bPrice;
-      return (aP - bP) || (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
+
+      return (
+        (aP - bP) ||
+        (aOrd - bOrd) ||
+        String(a.description || '').localeCompare(String(b.description || ''), 'es')
+      );
     }
 
-    return (aOrd - bOrd) || String(a.description||'').localeCompare(String(b.description||''), 'es');
+    return (
+      (aOrd - bOrd) ||
+      String(a.description || '').localeCompare(String(b.description || ''), 'es')
+    );
   };
 }
 
@@ -532,6 +624,7 @@ function closeCategoriesMenu() {
 function toggleCategoriesMenu() {
   const menu = $('categoriesMenu');
   if (!menu) return;
+
   const open = menu.classList.contains('open');
   closeUserMenu();
   menu.classList.toggle('open', !open);
@@ -553,17 +646,21 @@ function renderCategoriesMenu() {
       <div class="dd-sep"></div>
 
       <div class="dd-cats-grid">
-        ${ordered.map(cat => `
-          <label class="dd-chip">
-            <span>${cat}</span>
-            <input
-              type="checkbox"
-              class="dd-toggle-cat"
-              data-cat="${cat}"
-              ${filterCats.has(cat) ? 'checked' : ''}
-            >
-          </label>
-        `).join('')}
+        ${ordered
+          .map(
+            (cat) => `
+              <label class="dd-chip">
+                <span>${cat}</span>
+                <input
+                  type="checkbox"
+                  class="dd-toggle-cat"
+                  data-cat="${cat}"
+                  ${filterCats.has(cat) ? 'checked' : ''}
+                >
+              </label>
+            `
+          )
+          .join('')}
       </div>
     </div>
   `;
@@ -581,7 +678,7 @@ function renderCategoriesMenu() {
     });
   }
 
-  menu.querySelectorAll('.dd-toggle-cat').forEach(inp => {
+  menu.querySelectorAll('.dd-toggle-cat').forEach((inp) => {
     inp.addEventListener('change', () => {
       const cat = inp.dataset.cat;
       if (inp.checked) filterCats.add(cat);
@@ -615,13 +712,22 @@ function renderCategoriesSidebar() {
 
     <div class="toggle-sep"></div>
 
-    ${ordered.map(cat => `
-      <label class="toggle-row ${filterCats.has(cat) ? 'active' : ''}">
-        <span class="toggle-text">${cat}</span>
-        <input type="checkbox" class="toggle-cat" data-cat="${cat}" ${filterCats.has(cat) ? 'checked' : ''}>
-        <span class="toggle-ui"></span>
-      </label>
-    `).join('')}
+    ${ordered
+      .map(
+        (cat) => `
+          <label class="toggle-row ${filterCats.has(cat) ? 'active' : ''}">
+            <span class="toggle-text">${cat}</span>
+            <input
+              type="checkbox"
+              class="toggle-cat"
+              data-cat="${cat}"
+              ${filterCats.has(cat) ? 'checked' : ''}
+            >
+            <span class="toggle-ui"></span>
+          </label>
+        `
+      )
+      .join('')}
   `;
 
   const all = $('toggleAll');
@@ -638,10 +744,9 @@ function renderCategoriesSidebar() {
     });
   }
 
-  list.querySelectorAll('.toggle-cat').forEach(inp => {
+  list.querySelectorAll('.toggle-cat').forEach((inp) => {
     inp.addEventListener('change', () => {
       const cat = inp.dataset.cat;
-
       if (inp.checked) filterCats.add(cat);
       else filterCats.delete(cat);
 
@@ -661,16 +766,153 @@ function renderCategoriesSidebar() {
  ***********************/
 function closeUserMenu() {
   const menu = $('userMenu');
-  if (menu) menu.classList.remove('open');
+  if (!menu) return;
+  menu.classList.remove('open');
+  menu.setAttribute('aria-hidden', 'true');
 }
 
 function toggleUserMenu() {
   const menu = $('userMenu');
   if (!menu) return;
+
   const open = menu.classList.contains('open');
   closeCategoriesMenu();
   menu.classList.toggle('open', !open);
+  menu.setAttribute('aria-hidden', (!open) ? 'false' : 'true');
 }
+
+/***********************
+ * PERFIL (UI)
+ ***********************/
+function waLink(msg) {
+  const text = encodeURIComponent(String(msg || '').trim());
+  return `https://wa.me/5491131181021?text=${text}`;
+}
+
+async function loadMyOrdersUI() {
+  const box = $('myOrdersBox');
+  if (!box) return;
+
+  if (!currentSession || !customerProfile?.id) {
+    box.innerHTML = 'Iniciá sesión para ver tus pedidos.';
+    return;
+  }
+
+  box.innerHTML = 'Cargando…';
+
+  const { data, error } = await supabaseClient
+    .from('orders')
+    .select('id,created_at,status,total,payment_method')
+    .eq('customer_id', customerProfile.id)
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  if (error) {
+    box.innerHTML = 'No se pudieron cargar los pedidos.';
+    return;
+  }
+
+  const rows = (data || []);
+  if (!rows.length) {
+    box.innerHTML = 'Todavía no tenés pedidos.';
+    return;
+  }
+
+  box.innerHTML = `
+    <div style="display:grid; gap:8px;">
+      ${rows.map(o => `
+        <div style="border:1px solid #eee; border-radius:10px; padding:10px;">
+          <div><strong>N°:</strong> ${String(o.id).slice(0,8).toUpperCase()}</div>
+          <div><strong>Fecha:</strong> ${o.created_at ? new Date(o.created_at).toLocaleString('es-AR') : '—'}</div>
+          <div><strong>Estado:</strong> ${o.status || '—'}</div>
+          <div><strong>Total:</strong> $${formatMoney(o.total)}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function loadMyAddressesUI() {
+  const box = $('myAddressesBox');
+  if (!box) return;
+
+  if (!currentSession || !customerProfile?.id) {
+    box.innerHTML = 'Iniciá sesión para ver tus sucursales.';
+    return;
+  }
+
+  box.innerHTML = 'Cargando…';
+
+  const { data, error } = await supabaseClient
+    .from('customer_delivery_addresses')
+    .select('slot,label')
+    .eq('customer_id', customerProfile.id)
+    .order('slot', { ascending: true });
+
+  if (error) {
+    box.innerHTML = 'No se pudieron cargar las sucursales.';
+    return;
+  }
+
+  const rows = (data || []);
+  if (!rows.length) {
+    box.innerHTML = 'No tenés sucursales cargadas.';
+    return;
+  }
+
+  box.innerHTML = `
+    <div style="display:grid; gap:8px;">
+      ${rows.map(r => `
+        <div style="border:1px solid #eee; border-radius:10px; padding:10px;">
+          <strong>${r.slot}:</strong> ${r.label || ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function changePasswordUI() {
+  const s = $('passStatus');
+  const p1 = ($('newPass1')?.value || '').trim();
+  const p2 = ($('newPass2')?.value || '').trim();
+
+  if (!s) return;
+  s.textContent = '';
+
+  if (!currentSession) {
+    s.textContent = 'Tenés que iniciar sesión.';
+    return;
+  }
+
+  if (!p1 || p1.length < 6) {
+    s.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    return;
+  }
+
+  if (p1 !== p2) {
+    s.textContent = 'Las contraseñas no coinciden.';
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.updateUser({ password: p1 });
+
+  if (error) {
+    s.textContent = 'No se pudo cambiar la contraseña.';
+    return;
+  }
+
+  s.textContent = 'Contraseña actualizada.';
+  if ($('newPass1')) $('newPass1').value = '';
+  if ($('newPass2')) $('newPass2').value = '';
+}
+
+async function openProfile() {
+  if (!currentSession) { openLogin(); return; }
+  showSection('perfil');
+  await loadMyOrdersUI();
+  await loadMyAddressesUI();
+}
+window.openProfile = openProfile;
 
 /***********************
  * BUSCADOR
@@ -681,38 +923,19 @@ function setSearchInputValue(val) {
 }
 
 function getFilteredProducts() {
-  // 1) Si hay búsqueda: GLOBAL (ignora toggles)
   if (searchTerm && String(searchTerm).trim()) {
-    const term = String(searchTerm)
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .trim();
+    const term = normalizeText(searchTerm);
 
-    return products.filter(p => {
-      const hay = [
-        p.cod,
-        p.description
-      ]
-        .map(x =>
-          String(x || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-        )
-        .join(' ');
-
+    return products.filter((p) => {
+      const hay = [p.cod, p.description].map(normalizeText).join(' ');
       return hay.includes(term);
     });
   }
 
-  // 2) Sin búsqueda: respeta toggles
   let list = products.slice();
-
   if (!filterAll) {
-    list = list.filter(p => filterCats.has(String(p.category || '').trim()));
+    list = list.filter((p) => filterCats.has(String(p.category || '').trim()));
   }
-
   return list;
 }
 
@@ -726,13 +949,17 @@ function renderProducts() {
   container.innerHTML = '';
 
   const logged = !!currentSession;
-
-  let list = (typeof getFilteredProducts === 'function') ? getFilteredProducts() : products;
+  const list =
+    typeof getFilteredProducts === 'function' ? getFilteredProducts() : products;
 
   if (!list.length) {
     container.innerHTML = `
       <div style="padding:24px 40px; color:#666; font-size:14px;">
-        Sin resultados${(typeof searchTerm === 'string' && searchTerm.trim()) ? ` para "${String(searchTerm).trim()}"` : ''}.
+        Sin resultados${
+          typeof searchTerm === 'string' && searchTerm.trim()
+            ? ` para "${String(searchTerm).trim()}"`
+            : ''
+        }.
       </div>
     `;
     return;
@@ -743,105 +970,113 @@ function renderProducts() {
   const buildCard = (p) => {
     const pid = String(p.id);
     const codSafe = String(p.cod || '').trim();
-    const imgSrc = `${BASE_IMG}${encodeURIComponent(codSafe)}.jpg?v=${encodeURIComponent(IMG_VERSION)}`;
-    const imgFallback = "img/no-image.jpg";
+
+    const imgSrc = `${BASE_IMG}${encodeURIComponent(codSafe)}.jpg?v=${encodeURIComponent(
+      IMG_VERSION
+    )}`;
+    const imgFallback = 'img/no-image.jpg';
+
     const tuPrecio = logged ? unitYourPrice(p.list_price) : 0;
+    const isNuevo =
+      p.ranking === null || p.ranking === undefined || String(p.ranking).trim() === '';
 
-    const isNuevo = (p.ranking === null || p.ranking === undefined || String(p.ranking).trim() === '');
-
-    const inCart = cart.find(i => String(i.productId) === String(pid));
+    const inCart = cart.find((i) => String(i.productId) === String(pid));
     const qty = inCart ? Number(inCart.qtyCajas || 0) : 0;
     const totalUni = qty * Number(p.uxb || 0);
 
     return `
-  <div class="product-card" id="card-${pid}">
-    ${isNuevo ? `<div class="badge-nuevo">NUEVO</div>` : ``}
+      <div class="product-card" id="card-${pid}">
+        ${isNuevo ? '<div class="badge-nuevo">NUEVO</div>' : ''}
 
-    <img id="img-${pid}"
-         src="${imgSrc}"
-         alt="${String(p.description || '')}"
-         onerror="this.onerror=null;this.src='${imgFallback}'">
+        <img
+          id="img-${pid}"
+          src="${imgSrc}"
+          alt="${String(p.description || '')}"
+          onerror="this.onerror=null;this.src='${imgFallback}'"
+        >
 
-    <!-- TOP INFO -->
-    <div class="card-top">
-      <div class="card-row">
-        <div class="card-cod">Cod: <span>${codSafe}</span></div>
-        <div class="card-uxb">UxB: <span>${p.uxb}</span></div>
+        <div class="card-top">
+          <div class="card-row">
+            <div class="card-cod">Cod: <span>${codSafe}</span></div>
+            <div class="card-uxb">UxB: <span>${p.uxb}</span></div>
+          </div>
+
+          <div class="card-desc">${String(p.description || '')}</div>
+
+          <div class="${logged ? '' : 'price-hidden'} card-prices">
+            <div class="card-price-line">
+              Precio Lista: <strong>$${formatMoney(p.list_price)}</strong>
+            </div>
+            <div class="card-price-line">
+              Tu Precio: <strong>$${formatMoney(tuPrecio)}</strong>
+            </div>
+          </div>
+
+          <div class="${logged ? 'price-hidden' : ''} card-prices">
+            <div class="price-locked">Inicia sesión para ver precios</div>
+          </div>
+        </div>
+
+        ${
+          qty <= 0
+            ? `
+              <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
+                Agregar al pedido
+              </button>
+            `
+            : `
+              <div class="card-cartbar" id="qty-${pid}">
+                <div class="cartbar-top">
+                  <div class="cartbar-label">Subtotal</div>
+                  <div class="cartbar-subtotal">
+                    <strong class="cartbar-subv">
+                      $${formatMoney(
+                        logged ? unitYourPrice(p.list_price) * (qty * Number(p.uxb || 0)) : 0
+                      )}
+                    </strong>
+                    <span class="cartbar-iva">+ IVA</span>
+                  </div>
+                </div>
+
+                <div class="cartbar-controls">
+                  <div class="cartbar-left">
+                    <div class="cartbar-stepper">
+                      <button type="button" class="step-btn" onclick="changeQty('${pid}', -1)">−</button>
+                      <input
+                        class="step-input"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="${qty}"
+                        inputmode="numeric"
+                        onchange="manualQty('${pid}', this.value)"
+                      >
+                      <button type="button" class="step-btn" onclick="changeQty('${pid}', 1)">+</button>
+                    </div>
+
+                    <button type="button" class="chip chip-5" onclick="changeQty('${pid}', 5)">+5</button>
+                  </div>
+                </div>
+
+                <div class="cartbar-units">
+                  Unidades: <strong>${formatMoney(totalUni)}</strong>
+                </div>
+
+                <button type="button" class="remove-btn remove-compact" onclick="removeItem('${pid}')">
+                  Quitar
+                </button>
+              </div>
+            `
+        }
       </div>
-
-      <div class="card-desc">${String(p.description || '')}</div>
-
-      <div class="${logged ? '' : 'price-hidden'} card-prices">
-        <div class="card-price-line">Precio Lista: <strong>$${formatMoney(p.list_price)}</strong></div>
-        <div class="card-price-line">Tu Precio: <strong>$${formatMoney(tuPrecio)}</strong></div>
-      </div>
-
-      <div class="${logged ? 'price-hidden' : ''} card-prices">
-        <div class="price-locked">Inicia sesión para ver precios</div>
-      </div>
-    </div>
-
-    ${qty <= 0 ? `
-      <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
-        Agregar al pedido
-      </button>
-    ` : `
-  <!-- BOTTOM CART BAR (PRO) -->
-<div class="card-cartbar" id="qty-${pid}">
-
-  <!-- SUBTOTAL (arriba) -->
-  <div class="cartbar-top">
-    <div class="cartbar-label">Subtotal</div>
-
-    <div class="cartbar-subtotal">
-      <strong class="cartbar-subv">
-        $${formatMoney((logged ? (unitYourPrice(p.list_price) * (qty * Number(p.uxb || 0))) : 0))}
-      </strong>
-      <span class="cartbar-iva">+ IVA</span>
-    </div>
-  </div>
-
-  <!-- STEPPER (medio) -->
-  <div class="cartbar-controls">
-    <div class="cartbar-left">
-      <div class="cartbar-stepper">
-        <button type="button" class="step-btn" onclick="changeQty('${pid}', -1)">−</button>
-
-        <input class="step-input" type="number" min="1" step="1" value="${qty}"
-               inputmode="numeric"
-               onchange="manualQty('${pid}', this.value)">
-
-        <button type="button" class="step-btn" onclick="changeQty('${pid}', 1)">+</button>
-      </div>
-
-      <!-- +5 (se oculta en mobile/tablet por CSS) -->
-      <button type="button" class="chip chip-5" onclick="changeQty('${pid}', 5)">+5</button>
-    </div>
-  </div>
-
-  <!-- UNIDADES (abajo) -->
-  <div class="cartbar-units">
-    Unidades: <strong>${formatMoney(totalUni)}</strong>
-  </div>
-
-  <!-- QUITAR (último) -->
-  <button type="button" class="remove-btn remove-compact" onclick="removeItem('${pid}')">
-    Quitar
-  </button>
-
-</div>
-
-`}
-  </div>
-`;
+    `;
   };
 
-  // 🔥 Más vendidos: ranking global, pero respeta filtros aplicados (list)
   if (sortMode === 'bestsellers') {
     const items = [...list].sort((a, b) => {
-      const ar = (a.ranking == null || String(a.ranking).trim() === '') ? 999999 : Number(a.ranking);
-      const br = (b.ranking == null || String(b.ranking).trim() === '') ? 999999 : Number(b.ranking);
-      return (ar - br) || String(a.description||'').localeCompare(String(b.description||''), 'es');
+      const ar = a.ranking == null || String(a.ranking).trim() === '' ? 999999 : Number(a.ranking);
+      const br = b.ranking == null || String(b.ranking).trim() === '' ? 999999 : Number(b.ranking);
+      return ar - br || String(a.description || '').localeCompare(String(b.description || ''), 'es');
     });
 
     container.innerHTML = `
@@ -852,14 +1087,14 @@ function renderProducts() {
     return;
   }
 
-  // Normal: por categorías
-  cats.forEach(category => {
+  cats.forEach((category) => {
     const block = document.createElement('div');
     block.className = 'category-block';
+
     const catId = `cat-${slugifyCategory(category)}`;
 
     const items = list
-      .filter(p => String(p.category || '').trim() === String(category).trim())
+      .filter((p) => String(p.category || '').trim() === String(category).trim())
       .sort(getSortComparator());
 
     if (!items.length) return;
@@ -869,41 +1104,44 @@ function renderProducts() {
     if (String(category).trim().toLowerCase() === 'utensilios') {
       const groups = new Map();
 
-      items.forEach(p => {
-        const key = (p.subcategory && String(p.subcategory).trim())
-          ? String(p.subcategory).trim()
-          : 'Otros';
+      items.forEach((p) => {
+        const key =
+          p.subcategory && String(p.subcategory).trim() ? String(p.subcategory).trim() : 'Otros';
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(p);
       });
 
       const present = Array.from(groups.keys());
-      const fixed = UTENSILIOS_SUB_ORDER.filter(s => present.includes(s));
+      const fixed = UTENSILIOS_SUB_ORDER.filter((s) => present.includes(s));
+
       const extras = present
-        .filter(s => s !== 'Otros' && !UTENSILIOS_SUB_ORDER.includes(s))
+        .filter((s) => s !== 'Otros' && !UTENSILIOS_SUB_ORDER.includes(s))
         .sort((a, b) => a.localeCompare(b, 'es'));
+
       const hasOtros = present.includes('Otros');
       const subcatsOrdered = [...fixed, ...extras, ...(hasOtros ? ['Otros'] : [])];
 
-      cardsHtml = subcatsOrdered.map(sub => {
-        const prods = groups.get(sub) || [];
-        prods.sort(getSortComparator());
+      cardsHtml = subcatsOrdered
+        .map((sub) => {
+          const prods = groups.get(sub) || [];
+          prods.sort(getSortComparator());
 
-        const subtitle = `
-          <div style="
-            grid-column: 1 / -1;
-            font-size: 26px;
-            font-weight: bold;
-            margin: 40px 40px 20px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 6px;
-            background: #fff;
-          ">${sub}</div>
-        `;
+          const subtitle = `
+            <div style="
+              grid-column: 1 / -1;
+              font-size: 26px;
+              font-weight: bold;
+              margin: 40px 40px 20px;
+              border-bottom: 1px solid #ddd;
+              padding-bottom: 6px;
+              background: #fff;
+            ">${sub}</div>
+          `;
 
-        const cards = prods.map(buildCard).join('');
-        return subtitle + cards;
-      }).join('');
+          const cards = prods.map(buildCard).join('');
+          return subtitle + cards;
+        })
+        .join('');
     } else {
       cardsHtml = items.map(buildCard).join('');
     }
@@ -921,27 +1159,23 @@ function renderProducts() {
   if (!container.children.length) {
     container.innerHTML = `
       <div style="padding:24px 40px; color:#666; font-size:14px;">
-        Sin resultados${(typeof searchTerm === 'string' && searchTerm.trim()) ? ` para "${String(searchTerm).trim()}"` : ''}.
+        Sin resultados${
+          typeof searchTerm === 'string' && searchTerm.trim()
+            ? ` para "${String(searchTerm).trim()}"`
+            : ''
+        }.
       </div>
     `;
   }
 }
 
 /***********************
- * MOBILE FILTERS OVERLAY (PENDIENTE + APLICAR)
- *
- * Requiere estos IDs en tu HTML (solo en mobile):
- * - openFiltersBtn (botón al lado de Ordenar por)
- * - filtersOverlay (overlay)
- * - filtersGrid (contenedor de botones 2 columnas)
- * - filtersApplyBtn
- * - filtersCancelBtn
+ * MOBILE FILTERS OVERLAY
  ***********************/
-function openFiltersOverlay(){
+function openFiltersOverlay() {
   const ov = $('filtersOverlay');
   if (!ov) return;
 
-  // arranca siempre desde el estado aplicado actual
   pendingFilterAll = filterAll;
   pendingFilterCats = new Set(filterCats);
 
@@ -951,52 +1185,53 @@ function openFiltersOverlay(){
   ov.setAttribute('aria-hidden', 'false');
 }
 
-function closeFiltersOverlay(){
+function closeFiltersOverlay() {
   const ov = $('filtersOverlay');
   if (!ov) return;
+
   ov.classList.remove('open');
   ov.setAttribute('aria-hidden', 'true');
 }
 
-function applyPendingFilters(){
+function applyPendingFilters() {
   filterAll = pendingFilterAll;
   filterCats = new Set(pendingFilterCats);
 
-  // sync UIs desktop
   renderCategoriesMenu();
   renderCategoriesSidebar();
-
   renderProducts();
+
   closeFiltersOverlay();
 }
 
-function cancelPendingFilters(){
+function cancelPendingFilters() {
   closeFiltersOverlay();
 }
 
-function renderFiltersOverlayUI(){
+function renderFiltersOverlayUI() {
   const grid = $('filtersGrid');
   if (!grid) return;
 
   const ordered = getOrderedCategoriesFrom(products);
-
-  // helper: devuelve true si una cat está activa en “pendiente”
   const isOn = (cat) => pendingFilterCats.has(cat);
 
-  // armado grid 2 columnas (botones “toggle” visuales)
   grid.innerHTML = `
-    <button type="button"
-      class="mf-btn ${pendingFilterAll ? 'on' : ''}"
-      data-all="1">Todos los artículos</button>
-    ${ordered.map(cat => `
-      <button type="button"
-        class="mf-btn ${isOn(cat) ? 'on' : ''}"
-        data-cat="${cat}">${cat}</button>
-    `).join('')}
+    <button type="button" class="mf-btn ${pendingFilterAll ? 'on' : ''}" data-all="1">
+      Todos los artículos
+    </button>
+
+    ${ordered
+      .map(
+        (cat) => `
+          <button type="button" class="mf-btn ${isOn(cat) ? 'on' : ''}" data-cat="${cat}">
+            ${cat}
+          </button>
+        `
+      )
+      .join('')}
   `;
 
-  // clicks
-  grid.querySelectorAll('.mf-btn').forEach(btn => {
+  grid.querySelectorAll('.mf-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const isAll = btn.dataset.all === '1';
       const cat = btn.dataset.cat;
@@ -1005,8 +1240,8 @@ function renderFiltersOverlayUI(){
         pendingFilterAll = true;
         pendingFilterCats.clear();
       } else {
-        // al tocar una categoría, se apaga “todos”
         pendingFilterAll = false;
+
         if (pendingFilterCats.has(cat)) pendingFilterCats.delete(cat);
         else pendingFilterCats.add(cat);
 
@@ -1015,7 +1250,6 @@ function renderFiltersOverlayUI(){
         }
       }
 
-      // re-render para reflejar “on/off”
       renderFiltersOverlayUI();
     });
   });
@@ -1027,6 +1261,7 @@ function renderFiltersOverlayUI(){
 function resetShippingSelect() {
   const sel = $('shippingSelect');
   if (!sel) return;
+
   sel.innerHTML = `<option value="" selected>Elegir</option>`;
   deliveryChoice = { slot: '', label: '' };
 }
@@ -1036,6 +1271,7 @@ async function loadDeliveryOptions() {
   if (!sel) return;
 
   resetShippingSelect();
+
   if (!currentSession || !customerProfile?.id) return;
 
   const { data, error } = await supabaseClient
@@ -1049,7 +1285,7 @@ async function loadDeliveryOptions() {
     return;
   }
 
-  (data || []).forEach(row => {
+  (data || []).forEach((row) => {
     const opt = document.createElement('option');
     opt.value = String(row.slot);
     opt.textContent = `${row.slot}: ${row.label}`;
@@ -1064,24 +1300,32 @@ async function loadDeliveryOptions() {
  * CART
  ***********************/
 function addFirstBox(productId) {
-  if (!currentSession) { openLogin(); return; }
+  if (!currentSession) {
+    openLogin();
+    return;
+  }
 
-  const existing = cart.find(i => i.productId === productId);
+  const existing = cart.find((i) => i.productId === productId);
   if (existing) existing.qtyCajas += 1;
   else {
     cart.push({ productId, qtyCajas: 1 });
     toggleControls(productId, true);
   }
+
   updateCart();
   renderProducts();
 }
 
 function changeQty(productId, delta) {
-  const item = cart.find(i => i.productId === productId);
+  const item = cart.find((i) => i.productId === productId);
   if (!item) return;
 
   item.qtyCajas += delta;
-  if (item.qtyCajas <= 0) { removeItem(productId); return; }
+
+  if (item.qtyCajas <= 0) {
+    removeItem(productId);
+    return;
+  }
 
   const input = document.querySelector(`#qty-${CSS.escape(productId)} input`);
   if (input) input.value = item.qtyCajas;
@@ -1092,10 +1336,14 @@ function changeQty(productId, delta) {
 
 function manualQty(productId, value) {
   const qty = Math.max(0, parseInt(value, 10) || 0);
-  const item = cart.find(i => i.productId === productId);
+
+  const item = cart.find((i) => i.productId === productId);
   if (!item) return;
 
-  if (qty <= 0) { removeItem(productId); return; }
+  if (qty <= 0) {
+    removeItem(productId);
+    return;
+  }
 
   item.qtyCajas = qty;
   updateCart();
@@ -1103,8 +1351,9 @@ function manualQty(productId, value) {
 }
 
 function removeItem(productId) {
-  const idx = cart.findIndex(i => i.productId === productId);
+  const idx = cart.findIndex((i) => i.productId === productId);
   if (idx >= 0) cart.splice(idx, 1);
+
   toggleControls(productId, false);
   updateCart();
   renderProducts();
@@ -1113,6 +1362,7 @@ function removeItem(productId) {
 function toggleControls(productId, show) {
   const addBtn = $(`add-${productId}`);
   const qtyWrap = $(`qty-${productId}`);
+
   if (addBtn) addBtn.style.display = show ? 'none' : 'inline-block';
   if (qtyWrap) qtyWrap.style.display = show ? 'block' : 'none';
 }
@@ -1122,19 +1372,22 @@ function calcTotals() {
   const paymentDiscount = getPaymentDiscount();
 
   let subtotal = 0;
+
   if (logged) {
-    cart.forEach(item => {
-      const p = products.find(x => String(x.id) === String(item.productId));
+    cart.forEach((item) => {
+      const p = products.find((x) => String(x.id) === String(item.productId));
       if (!p) return;
+
       const totalUni = item.qtyCajas * Number(p.uxb || 0);
       subtotal += unitYourPrice(p.list_price) * totalUni;
     });
   }
 
   let totalNoDiscount = 0;
-  cart.forEach(item => {
-    const p = products.find(x => String(x.id) === String(item.productId));
+  cart.forEach((item) => {
+    const p = products.find((x) => String(x.id) === String(item.productId));
     if (!p) return;
+
     const totalUni = item.qtyCajas * Number(p.uxb || 0);
     totalNoDiscount += Number(p.list_price || 0) * totalUni;
   });
@@ -1155,7 +1408,7 @@ function calcTotals() {
     webDiscountValue,
     paymentDiscountValue,
     finalTotal,
-    totalDiscounts
+    totalDiscounts,
   };
 }
 
@@ -1170,15 +1423,15 @@ function updateCart() {
   } else {
     let rows = '';
 
-    cart.forEach(item => {
-      const p = products.find(x => String(x.id) === String(item.productId));
+    cart.forEach((item) => {
+      const p = products.find((x) => String(x.id) === String(item.productId));
       if (!p) return;
 
       const totalCajas = item.qtyCajas;
       const totalUni = totalCajas * Number(p.uxb || 0);
 
       const tuPrecioUnit = t.logged ? unitYourPrice(p.list_price) : 0;
-      const lineTotal = t.logged ? (tuPrecioUnit * totalUni) : 0;
+      const lineTotal = t.logged ? tuPrecioUnit * totalUni : 0;
 
       rows += `
         <tr>
@@ -1186,8 +1439,8 @@ function updateCart() {
           <td class="desc">${splitTwoWords(p.description)}</td>
           <td>${formatMoney(totalCajas)}</td>
           <td>${formatMoney(totalUni)}</td>
-          <td>${t.logged ? ('$' + formatMoney(tuPrecioUnit)) : '—'}</td>
-          <td><strong>${t.logged ? ('$' + formatMoney(lineTotal)) : '—'}</strong></td>
+          <td>${t.logged ? '$' + formatMoney(tuPrecioUnit) : '—'}</td>
+          <td><strong>${t.logged ? '$' + formatMoney(lineTotal) : '—'}</strong></td>
         </tr>
       `;
     });
@@ -1202,6 +1455,7 @@ function updateCart() {
           <col class="tp">
           <col class="total">
         </colgroup>
+
         <thead>
           <tr>
             <th>${headerTwoLine('Cod')}</th>
@@ -1212,6 +1466,7 @@ function updateCart() {
             <th>${headerTwoLine('Total $')}</th>
           </tr>
         </thead>
+
         <tbody>${rows}</tbody>
       </table>
     `;
@@ -1219,23 +1474,29 @@ function updateCart() {
 
   $('subtotal') && ($('subtotal').innerText = formatMoney(t.subtotal));
   $('webDiscountValue') && ($('webDiscountValue').innerText = formatMoney(t.webDiscountValue));
-  $('paymentDiscountValue') && ($('paymentDiscountValue').innerText = formatMoney(t.paymentDiscountValue));
+  $('paymentDiscountValue') &&
+    ($('paymentDiscountValue').innerText = formatMoney(t.paymentDiscountValue));
   $('total') && ($('total').innerText = formatMoney(t.finalTotal));
+
   if ($('pedidoTotalHeader')) $('pedidoTotalHeader').innerText = formatMoney(t.finalTotal);
-  if ($('paymentDiscountPercent')) $('paymentDiscountPercent').innerText = (t.paymentDiscount * 100).toFixed(0) + '%';
+
+  if ($('paymentDiscountPercent')) {
+    $('paymentDiscountPercent').innerText = (t.paymentDiscount * 100).toFixed(0) + '%';
+  }
+
   $('totalNoDiscount') && ($('totalNoDiscount').innerText = formatMoney(t.totalNoDiscount));
   $('totalDiscounts') && ($('totalDiscounts').innerText = formatMoney(t.totalDiscounts));
 
   let count = 0;
-  cart.forEach(i => count += i.qtyCajas);
+  cart.forEach((i) => (count += i.qtyCajas));
   $('cartCount') && ($('cartCount').innerText = count);
   $('mobileCartCount') && ($('mobileCartCount').innerText = count);
-
 
   const btn = $('submitOrderBtn');
   if (btn) {
     const mustChooseDelivery = !deliveryChoice.slot;
     const canConfirm = !!currentSession && cart.length > 0 && !mustChooseDelivery;
+
     btn.disabled = !canConfirm;
 
     if (!!currentSession && cart.length > 0 && mustChooseDelivery) {
@@ -1247,116 +1508,188 @@ function updateCart() {
 }
 
 /***********************
- * SUBMIT ORDER
+ * SEND TO SHEETS + SUBMIT ORDER
+ * (igual que tu versión; no tocado)
  ***********************/
+async function sendOrderToSheets({ codCliente, vend, condicionPago, sucursalEntrega, items }) {
+  if (!SHEETS_WEBAPP_URL || !SHEETS_SECRET) return;
+
+  const payload = {
+    secret: SHEETS_SECRET,
+    cod_cliente: String(codCliente || '').trim(),
+    vend: String(vend || '').trim(),
+    condicion_pago: String(condicionPago || '').trim(),
+    sucursal_entrega: String(sucursalEntrega || '').trim(),
+    items: (items || []).map((it) => ({
+      cod_art: String(it.cod_art || '').trim(),
+      cajas: Number(it.cajas || 0),
+      uxb: Number(it.uxb || 0),
+    })),
+  };
+
+  await fetch(SHEETS_WEBAPP_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+  });
+}
+
+async function withTimeout(promise, ms, label = 'timeout') {
+  let t;
+  const timeout = new Promise((_, reject) => {
+    t = setTimeout(() => reject(new Error(`Timeout (${ms}ms) en ${label}`)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function debugStep(txt) {
+  console.log('[ORDER]', txt);
+  setOrderStatus(txt, '');
+}
+
 async function submitOrder() {
   try {
     setOrderStatus('');
 
-    if (!currentSession) { openLogin(); return; }
-    if (isAdmin) { setOrderStatus('Modo Administrador: no se puede confirmar pedidos desde esta vista.', 'err'); return; }
-    if (!customerProfile?.id) { setOrderStatus('No se encontró el perfil del cliente.', 'err'); return; }
-    if (!cart.length) { setOrderStatus('Carrito vacío.', 'err'); return; }
-    if (!deliveryChoice.slot) { setOrderStatus('Elegí una opción de Entrega para poder confirmar el pedido.', 'err'); return; }
+    if (window.__submittingOrder) return;
+    window.__submittingOrder = true;
+
+    if (!currentSession) {
+      openLogin();
+      return;
+    }
+
+    if (isAdmin) {
+      setOrderStatus('Modo Administrador: no se puede confirmar pedidos desde esta vista.', 'err');
+      return;
+    }
+
+    if (!customerProfile?.id) {
+      setOrderStatus('No se encontró el perfil del cliente.', 'err');
+      return;
+    }
+
+    if (!cart.length) {
+      setOrderStatus('Carrito vacío.', 'err');
+      return;
+    }
+
+    if (!deliveryChoice.slot) {
+      setOrderStatus('Elegí una opción de Entrega para poder confirmar el pedido.', 'err');
+      return;
+    }
 
     const btn = $('submitOrderBtn');
     if (btn) btn.disabled = true;
-    setOrderStatus('Confirmando pedido…', '');
 
     const t = calcTotals();
 
     const orderPayload = {
+      auth_user_id: currentSession.user.id,
       customer_id: customerProfile.id,
-      delivery_slot: Number(deliveryChoice.slot),
-      delivery_label: String(deliveryChoice.label || '').trim() || `Entrega ${deliveryChoice.slot}`,
-      dto_vol: Number(customerProfile.dto_vol || 0),
-      web_discount: WEB_ORDER_DISCOUNT,
-      payment_discount: Number(t.paymentDiscount || 0),
+      status: 'pendiente',
       payment_method: getPaymentMethodText(),
-
+      payment_discount: Number(t.paymentDiscount || 0),
+      web_discount: WEB_ORDER_DISCOUNT,
       subtotal: Number(t.subtotal || 0),
-      total_no_discount: Number(t.totalNoDiscount || 0),
-      web_discount_value: Number(t.webDiscountValue || 0),
-      payment_discount_value: Number(t.paymentDiscountValue || 0),
       total: Number(t.finalTotal || 0),
-      total_discounts: Number(t.totalDiscounts || 0),
     };
 
-    const { data: orderRow, error: orderErr } = await supabaseClient
-      .from('orders')
-      .insert(orderPayload)
-      .select('id')
-      .single();
+    if (typeof debugStep === 'function') debugStep('Confirmando pedido… (cabecera)');
+
+    const res = await supabaseClient.from('orders').insert(orderPayload).select('id').single();
+
+    const orderRow = res.data;
+    const orderErr = res.error;
 
     if (orderErr || !orderRow?.id) {
-      console.error('order insert error:', orderErr);
-      setOrderStatus('No se pudo confirmar el pedido (cabecera).', 'err');
+      const msg =
+        orderErr?.message || orderErr?.details || orderErr?.hint || JSON.stringify(orderErr || {});
+      setOrderStatus(`No se pudo confirmar el pedido (cabecera): ${msg}`, 'err');
       if (btn) btn.disabled = false;
       return;
     }
 
     const orderId = orderRow.id;
 
-    // ✅ FIX: acá NO existe "list" => usar products
-    const itemsPayload = cart.map(item => {
-      const p = products.find(x => String(x.id) === String(item.productId));
-      if (!p) return null;
+    const itemsPayload = cart
+      .map((item) => {
+        const p = products.find((x) => String(x.id) === String(item.productId));
+        if (!p) return null;
 
-      const qtyCajas = Number(item.qtyCajas || 0);
-      const uxb = Number(p.uxb || 0);
-      const qtyUni = qtyCajas * uxb;
+        const cajas = Number(item.qtyCajas || 0);
+        const uxb = Number(p.uxb || 0);
 
-      const unitList = Number(p.list_price || 0);
-      const unitYour = Number(unitYourPrice(p.list_price) || 0);
-      const lineTotal = unitYour * qtyUni;
+        const unitList = Number(p.list_price || 0);
+        const unitYour = Number(unitYourPrice(p.list_price) || 0);
 
-      return {
-        order_id: orderId,
-        product_id: p.id,
-        cod: String(p.cod || ''),
-        description: String(p.description || ''),
-        uxb,
-        qty_cajas: qtyCajas,
-        qty_uni: qtyUni,
-        unit_list_price: unitList,
-        unit_your_price: unitYour,
-        line_total: lineTotal
-      };
-    }).filter(Boolean);
+        const lineTotal = unitYour * (cajas * uxb);
 
-    const { error: itemsErr } = await supabaseClient
-      .from('order_items')
-      .insert(itemsPayload);
+        return {
+          order_id: orderId,
+          product_id: p.id,
+          cajas,
+          uxb,
+          unit_list_price: unitList,
+          unit_your_price: unitYour,
+          line_total: lineTotal,
+        };
+      })
+      .filter(Boolean);
+
+    if (typeof debugStep === 'function') debugStep('Confirmando pedido… (renglones)');
+
+    const { error: itemsErr } = await withTimeout(
+      supabaseClient.from('order_items').insert(itemsPayload),
+      45000,
+      'insert order_items'
+    );
 
     if (itemsErr) {
-      console.error('items insert error:', itemsErr);
-      setOrderStatus('Pedido creado pero fallaron los renglones. Avisá a administración.', 'err');
+      const msg =
+        itemsErr?.message || itemsErr?.details || itemsErr?.hint || JSON.stringify(itemsErr || {});
+      setOrderStatus(`Pedido creado pero fallaron los renglones: ${msg}`, 'err');
       if (btn) btn.disabled = false;
       return;
     }
 
+    sendOrderToSheets({
+      codCliente: customerProfile?.cod_cliente,
+      vend: customerProfile?.vend || '',
+      condicionPago: getPaymentMethodText(),
+      sucursalEntrega: deliveryChoice?.label || '',
+      items: itemsPayload.map((it) => ({
+        cod_art: products.find((p) => String(p.id) === String(it.product_id))?.cod || '',
+        cajas: it.cajas,
+        uxb: it.uxb,
+      })),
+    }).catch((e) => console.warn('Sheets error:', e));
+
     cart.splice(0, cart.length);
-    products.forEach(p => toggleControls(String(p.id), false));
+    products.forEach((p) => toggleControls(String(p.id), false));
 
     updateCart();
-    setOrderStatus(`Pedido confirmado. N°: ${orderId.slice(0, 8).toUpperCase()}`, 'ok');
-
+    setOrderStatus(`Pedido confirmado. N°: ${String(orderId).slice(0, 8).toUpperCase()}`, 'ok');
   } catch (e) {
-    console.error('submitOrder fatal:', e);
-    setOrderStatus('Error inesperado confirmando el pedido.', 'err');
+    const msg =
+      e && (e.message || e.toString()) ? e.message || e.toString() : 'Error desconocido';
+    setOrderStatus(`Error confirmando el pedido: ${msg}`, 'err');
   } finally {
+    window.__submittingOrder = false;
     const btn = $('submitOrderBtn');
     if (btn) btn.disabled = false;
   }
 }
 
-/***********************
- * MIS PEDIDOS (placeholder)
- ***********************/
 async function openMyOrders() {
-  setOrderStatus('Mis pedidos todavía no está disponible.', 'err');
-  showSection('productos');
+  await openProfile();
 }
+window.openMyOrders = openMyOrders;
 
 function openChangePassword() {
   setOrderStatus('Cambiar contraseña: lo configuramos después.', 'err');
@@ -1365,13 +1698,12 @@ function openChangePassword() {
 window.openChangePassword = openChangePassword;
 
 /***********************
- * INIT
+ * INIT (arranque de la web) — CORREGIDO
  ***********************/
-(async function init() {
+document.addEventListener('DOMContentLoaded', async () => {
   // Exponer funciones al HTML (onclick)
   window.showSection = showSection;
   window.goToProductsTop = goToProductsTop;
-
   window.openLogin = openLogin;
   window.closeLogin = closeLogin;
   window.login = login;
@@ -1380,11 +1712,33 @@ window.openChangePassword = openChangePassword;
   window.addFirstBox = addFirstBox;
   window.changeQty = changeQty;
   window.manualQty = manualQty;
+  window.removeItem = removeItem;
   window.updateCart = updateCart;
-
   window.submitOrder = submitOrder;
-  window.openMyOrders = openMyOrders;
 
+  // ✅ DESKTOP: Ordenar por (select)
+  const sortSel = $('sortSelect');
+  if (sortSel) {
+    sortSel.addEventListener('change', async () => {
+      sortMode = String(sortSel.value || 'category');
+      await loadProductsFromDB();
+      renderProducts();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // ✅ MOBILE: Ordenar (select)
+  const mobSort = $('mobileSortSelect');
+  if (mobSort) {
+    mobSort.addEventListener('change', async () => {
+      sortMode = String(mobSort.value || 'category');
+      await loadProductsFromDB();
+      renderProducts();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // CUIT live format
   function formatCUITLive(value) {
     const d = String(value || '').replace(/\D/g, '').slice(0, 11);
     if (d.length <= 2) return d;
@@ -1407,57 +1761,85 @@ window.openChangePassword = openChangePassword;
     });
   }
 
+  // Menú categorías
   $('categoriesBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     toggleCategoriesMenu();
   });
 
-  $('profileBtn')?.addEventListener('click', (e) => { e.preventDefault(); toggleUserMenu(); });
-  $('helloNavBtn')?.addEventListener('click', (e) => { e.preventDefault(); toggleUserMenu(); });
+  // ✅ MENÚ USUARIO DESKTOP (FIX: evita que se cierre instantáneamente)
+  const profileBtnEl = $('profileBtn');
+  const helloBtnEl = $('helloNavBtn');
+  const userMenuEl = $('userMenu');
 
-  const sortSel = $('sortSelect');
-  if (sortSel) {
-    sortSel.addEventListener('change', () => {
-      sortMode = sortSel.value || 'category';
-      renderProducts();
+  if (profileBtnEl) {
+    profileBtnEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleUserMenu();
     });
   }
 
+  if (helloBtnEl) {
+    helloBtnEl.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleUserMenu();
+    });
+  }
+
+  // Pago (botones)
   $('paymentButtons')?.addEventListener('click', (e) => {
     const btn = e.target.closest('.pay-btn');
     if (!btn) return;
     setPaymentByValue(btn.dataset.value);
   });
 
+  // Pago (select)
   $('paymentSelect')?.addEventListener('change', () => {
     syncPaymentButtons();
     updateCart();
   });
 
-    // ✅ Mobile: carrito -> Pedido
+  // Mobile: carrito -> Pedido
   $('mobileCartBtn')?.addEventListener('click', () => {
     showSection('carrito');
   });
 
-  // ✅ Mobile: avatar -> dropdown (si no logueado => login)
+  // Mobile: avatar -> dropdown (si no logueado => login)
   $('mobileProfileBtn')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  if (!currentSession) { openLogin(); return; }
-  toggleMobileUserMenu();
+    e.preventDefault();
+    e.stopPropagation();
+    if (!currentSession) {
+      openLogin();
+      return;
+    }
+    toggleMobileUserMenu();
   });
 
-  document.addEventListener('click', (e) => {
-  const menu = $('mobileUserMenu');
-  const btn = $('mobileProfileBtn');
-  if (!menu || !btn) return;
-
-  const inside = menu.contains(e.target) || btn.contains(e.target);
-  if (!inside) closeMobileUserMenu();
+  // PERFIL: botones
+  $('btnAddAddress')?.addEventListener('click', () => {
+    const name = (customerProfile?.business_name || '').trim();
+    const cod = (customerProfile?.cod_cliente || '').trim();
+    const msg = `Hola! Soy ${name}${cod ? ` (Cod Cliente ${cod})` : ''}. Quiero agregar una sucursal de entrega.`;
+    window.open(waLink(msg), '_blank', 'noopener');
   });
 
+  $('btnReportError')?.addEventListener('click', () => {
+    const name = (customerProfile?.business_name || '').trim();
+    const cod = (customerProfile?.cod_cliente || '').trim();
+    const msg = `Hola! Soy ${name}${cod ? ` (Cod Cliente ${cod})` : ''}. Quiero avisar que hay un error en la web mayorista.`;
+    window.open(waLink(msg), '_blank', 'noopener');
+  });
+
+  $('btnChangePass')?.addEventListener('click', () => changePasswordUI());
+
+  // Entregas
   const shipSel = $('shippingSelect');
   if (shipSel) {
     deliveryChoice = { slot: shipSel.value || '', label: '' };
+
     shipSel.addEventListener('change', () => {
       const opt = shipSel.options[shipSel.selectedIndex];
       deliveryChoice.slot = shipSel.value || '';
@@ -1466,125 +1848,41 @@ window.openChangePassword = openChangePassword;
     });
   }
 
+  // Click afuera: cerrar menús desktop (robusto)
   document.addEventListener('click', (e) => {
     const catBtn = $('categoriesBtn');
     const catMenu = $('categoriesMenu');
-    const profileBtn = $('profileBtn');
-    const helloBtn = $('helloNavBtn');
-    const userMenu = $('userMenu');
 
     const clickInsideCat =
-      (catBtn && catBtn.contains(e.target)) ||
-      (catMenu && catMenu.contains(e.target));
+      (catBtn && catBtn.contains(e.target)) || (catMenu && catMenu.contains(e.target));
 
     const clickInsideUser =
-      (profileBtn && profileBtn.contains(e.target)) ||
-      (helloBtn && helloBtn.contains(e.target)) ||
-      (userMenu && userMenu.contains(e.target));
+      (profileBtnEl && profileBtnEl.contains(e.target)) ||
+      (helloBtnEl && helloBtnEl.contains(e.target)) ||
+      (userMenuEl && userMenuEl.contains(e.target));
 
     if (!clickInsideCat) closeCategoriesMenu();
     if (!clickInsideUser) closeUserMenu();
-  });
 
-  // Buscador NAV (global)
-    const navSearch = $('navSearch');
-  if (navSearch) {
-    navSearch.addEventListener('input', () => {
-      searchTerm = String(navSearch.value || '').trim();
-
-      const ms = $('mobileSearch');
-      if (ms) ms.value = navSearch.value;
-
-      renderProducts();
-    });
-  }
-
-    // ✅ Buscador MOBILE (mismo comportamiento que navSearch)
-  const mobileSearch = $('mobileSearch');
-  if (mobileSearch) {
-    mobileSearch.addEventListener('input', () => {
-      searchTerm = String(mobileSearch.value || '').trim();
-
-      // sincroniza por si navSearch existe (desktop)
-      const ns = $('navSearch');
-      if (ns) ns.value = mobileSearch.value;
-
-      renderProducts();
-    });
-  }
-
-  // ✅ Botón Filtros MOBILE (reusa el overlay existente)
-  $('mobileFiltersBtn')?.addEventListener('click', () => openFiltersOverlay());
-
-  // ✅ Ordenar (mobile) - el usuario toca el select invisible
-const mobSort = $('mobileSortSelect');
-if (mobSort) {
-  mobSort.addEventListener('change', () => {
-    sortMode = mobSort.value || 'category';
-
-    // sincroniza también el select desktop (si existe)
-    const sel = $('sortSelect');
-    if (sel) sel.value = sortMode;
-
-    renderProducts();
-  });
-}
-
-const deskSort = $('sortSelect');
-if (deskSort) {
-  deskSort.addEventListener('change', () => {
-    sortMode = deskSort.value || 'category';
-    const ms = $('mobileSortSelect');
-    if (ms) ms.value = sortMode;
-    renderProducts();
-  });
-}
-
-  $('hamburgerBtn')?.addEventListener('click', () => { toggleMobileMenu(); });
-
-  document.addEventListener('click', (e) => {
-    const menu = $('mobileMenu');
-    const btn = $('hamburgerBtn');
-    if (!menu || !btn) return;
-    const clickedInside = menu.contains(e.target) || btn.contains(e.target);
-    if (!clickedInside) closeMobileMenu();
-  });
-
-  // ✅ Buscador MOBILE sin <input> (evita Password Manager de Chrome Android)
-const mobileSearchCE = $('mobileSearchCE');
-if (mobileSearchCE) {
-
-  const syncSearch = () => {
-    const val = String(mobileSearchCE.textContent || '').replace(/\s+/g, ' ').trim();
-    searchTerm = val;
-
-    // sincroniza con navSearch (desktop)
-    const ns = $('navSearch');
-    if (ns) ns.value = val;
-
-    renderProducts();
-  };
-
-  mobileSearchCE.addEventListener('input', syncSearch);
-
-  // Enter no agrega salto de línea
-  mobileSearchCE.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      mobileSearchCE.blur();
+    // mobile user menu close
+    const mMenu = $('mobileUserMenu');
+    const mBtn = $('mobileProfileBtn');
+    if (mMenu && mBtn) {
+      const insideM = mMenu.contains(e.target) || mBtn.contains(e.target);
+      if (!insideM) closeMobileUserMenu();
     }
   });
 
-  // Si pegás texto, lo normalizamos
-  mobileSearchCE.addEventListener('paste', (e) => {
-    e.preventDefault();
-    const text = (e.clipboardData || window.clipboardData).getData('text');
-    document.execCommand('insertText', false, text);
-  });
-}
+  // Buscador NAV
+  const navSearch = $('navSearch');
+  if (navSearch) {
+    navSearch.addEventListener('input', () => {
+      searchTerm = String(navSearch.value || '').trim();
+      renderProducts();
+    });
+  }
 
-
-  // ✅ Mobile filtros: abrir/cerrar/aplicar/cancelar
+  // Mobile filtros overlay
   $('openFiltersBtn')?.addEventListener('click', () => openFiltersOverlay());
   $('filtersCancelBtn')?.addEventListener('click', () => cancelPendingFilters());
   $('filtersApplyBtn')?.addEventListener('click', () => applyPendingFilters());
@@ -1593,7 +1891,7 @@ if (mobileSearchCE) {
     if (e.target.id === 'filtersOverlay') closeFiltersOverlay();
   });
 
-  // Cargar sesión inicial
+  // Cargar sesión inicial y productos
   const { data } = await supabaseClient.auth.getSession();
   currentSession = data.session || null;
 
@@ -1606,10 +1904,10 @@ if (mobileSearchCE) {
   updateCart();
   syncPaymentButtons();
 
+  // Reactividad login/logout
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
     currentSession = session;
 
-    // limpiar búsqueda
     searchTerm = '';
     const ns = $('navSearch');
     if (ns) ns.value = '';
@@ -1619,10 +1917,11 @@ if (mobileSearchCE) {
 
     renderCategoriesMenu();
     closeCategoriesMenu();
+
     renderCategoriesSidebar();
     renderProducts();
-
     updateCart();
+
     syncPaymentButtons();
   });
-})();
+});
