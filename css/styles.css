@@ -2216,3 +2216,102 @@ body {
   /* opcional: ocultar el select en desktop si querés que queden SOLO botones */
   .sort-row .sort-wrap{ display:none; }
 }
+
+/* =========================
+   PERFIL: 90% ANCHO + ACCORDIONS
+   (PEGAR AL FINAL)
+========================= */
+.profile-wide{
+  width: 90vw;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* no pelees con el max-width anterior */
+.profile-wrap.profile-wide{
+  max-width: none;
+  padding: 0 40px 40px;
+}
+
+/* Accordion */
+.profile-accordion .profile-acc-head{
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font: inherit;
+}
+
+.profile-accordion .profile-acc-title{
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.profile-accordion .profile-acc-caret{
+  transition: transform .18s ease;
+  opacity: .85;
+}
+
+.profile-accordion .profile-acc-head[aria-expanded="true"] .profile-acc-caret{
+  transform: rotate(180deg);
+}
+
+.profile-accordion .profile-acc-body{
+  margin-top: 10px;
+}
+
+/* =========================
+   PEDIDOS: cards + items + repetir
+========================= */
+.order-card{
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.order-top{
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.order-id{ font-weight: 900; }
+
+.order-meta{
+  font-size: 13px;
+  color: #444;
+}
+
+.order-items{
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #333;
+}
+
+.order-items li{ margin: 4px 0; }
+
+.order-actions{
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.order-repeat-btn{
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #111;
+  background: #fff;
+  color: #111;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0 14px;
+}
+.order-repeat-btn:hover{ background:#f5f5f5; }
