@@ -445,37 +445,56 @@ async function loadProductsFromDB() {
   const logged = !!currentSession;
 
   if (!logged) {
-    // Público: ordena via RPC
-    const { data, error } = await supabaseClient.rpc('get_products_public_sorted', { p_sort: sortMode });
-    if (error) {
-      console.error('Error loading public products:', error);
-      products = [];
-      return;
-    }
+  // Público: intenta RPC
+  const { data, error } = await supabaseClient.rpc('get_products_public_sorted', {
+  sort_mode: sortMode,
+  });
 
-    products = (data || []).map((p) => ({
+  if (!error && Array.isArray(data) && data.length) {
+    products = data.map((p) => ({
       id: p.id,
       cod: p.cod,
       category: p.category || 'Sin categoría',
       subcategory: p.subcategory,
-      ranking:
-        p.ranking === null || p.ranking === undefined || p.ranking === ''
-          ? null
-          : Number(p.ranking),
-      orden_catalogo:
-        p.orden_catalogo === null ||
-        p.orden_catalogo === undefined ||
-        p.orden_catalogo === ''
-          ? null
-          : Number(p.orden_catalogo),
+      ranking: p.ranking == null || p.ranking === '' ? null : Number(p.ranking),
+      orden_catalogo: p.orden_catalogo == null || p.orden_catalogo === '' ? null : Number(p.orden_catalogo),
       description: p.description,
       list_price: p.list_price,
       uxb: p.uxb,
       images: Array.isArray(p.images) ? p.images : [],
     }));
-
     return;
   }
+
+  // ✅ Fallback: consulta directa (requiere policy SELECT para anon)
+  if (error) console.warn('Public RPC failed, fallback to direct select:', error);
+
+  const { data: rows, error: err2 } = await supabaseClient
+    .from('products')
+    .select('id,cod,category,subcategory,ranking,orden_catalogo,description,list_price,uxb,images')
+    .eq('active', true);
+
+  if (err2) {
+    console.error('Public select failed:', err2);
+    products = [];
+    return;
+  }
+
+  products = (rows || []).map((p) => ({
+    id: p.id,
+    cod: p.cod,
+    category: p.category || 'Sin categoría',
+    subcategory: p.subcategory,
+    ranking: p.ranking == null || p.ranking === '' ? null : Number(p.ranking),
+    orden_catalogo: p.orden_catalogo == null || p.orden_catalogo === '' ? null : Number(p.orden_catalogo),
+    description: p.description,
+    list_price: p.list_price,
+    uxb: p.uxb,
+    images: Array.isArray(p.images) ? p.images : [],
+  }));
+
+  return;
+}
 
   // ✅ LOGUEADO: orden también según sortMode (para que no “parezca” que no ordena)
   let q = supabaseClient
