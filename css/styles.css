@@ -2373,27 +2373,3 @@ body {
   height: 1px !important;
   opacity: 0 !important;
 }
-
-/* ==========================
-   FIX: mostrar método de pago
-   ========================== */
-
-/* Volver a mostrar el bloque */
-#carrito .pay-column{
-  display: block !important;
-}
-
-/* Que NO sea sidebar fijo, sino debajo de Entrega y centrado */
-#carrito .pay-card{
-  position: static !important;
-  width: min(780px, 100%) !important;
-  margin: 0 auto 14px !important;
-  max-height: none !important;
-  overflow: visible !important;
-}
-
-/* Layout del carrito en una sola columna (pago + tabla) */
-#carrito .cart-layout{
-  display: block !important;
-  padding: 0 40px 10px;
-}
