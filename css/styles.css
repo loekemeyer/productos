@@ -2216,3 +2216,160 @@ body {
   /* opcional: ocultar el select en desktop si querés que queden SOLO botones */
   .sort-row .sort-wrap{ display:none; }
 }
+
+/* Método de pago debajo de Dirección */
+.pay-row{
+  margin-top: 14px;
+}
+
+.pay-row .pay-card{
+  width: 100%;
+}
+
+/* El carrito también a ancho completo */
+.cart-column{
+  margin-top: 14px;
+}
+
+.payment-buttons.payment-6{
+  display:grid;
+  grid-template-columns:repeat(6, 1fr);
+  gap:10px;
+}
+
+.pay-btn-full{
+  width:100%;
+  margin-top:10px;
+}
+
+#paymentSelect{
+  display:none; /* lo ocultamos, lo usamos como “valor real” */
+}
+
+/* si en pantallas chicas no entran 6, bajan a 3x2 */
+@media (max-width: 900px){
+  .payment-buttons.payment-6{
+    grid-template-columns:repeat(3, 1fr);
+  }
+}
+
+/* Carrito en una sola columna (evita que "pago" quede al costado) */
+.cart-layout.cart-layout-single{
+  display:block !important;
+}
+
+/* ===============================
+   CHECKOUT: 1 columna centrada
+   =============================== */
+
+/* Evita que el layout viejo arme sidebar aunque exista */
+#carrito .cart-layout{
+  grid-template-columns: 1fr !important;
+}
+#carrito .cart-layout .pay-column{
+  display: none !important;
+}
+
+/* Entrega y Pago: mismo ancho y centrados */
+#carrito .ship-row{
+  max-width: 760px;
+  margin: 0 auto 14px;
+}
+#carrito .ship-card{
+  width: 100%;
+}
+
+/* Carrito (lista de items) centrado y mismo ancho */
+#carrito .cart-layout-single{
+  max-width: 760px;
+  margin: 0 auto;
+  display: block !important;
+}
+
+/* ===============================
+   Pago: 6 botones iguales en 1 fila
+   =============================== */
+#carrito .payment-buttons.payment-6{
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+#carrito .payment-buttons.payment-6 .pay-btn{
+  width: 100%;
+  padding: 10px 8px;
+  border-radius: 12px;
+}
+
+/* Botón “prefiero no decidir ahora” ancho completo */
+#carrito .pay-btn-full{
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 12px;
+}
+
+/* Ocultar el select (pero queda para JS) */
+#carrito #paymentSelect{
+  display: none !important;
+}
+
+/* =========================================================
+   CHECKOUT (#carrito): Pago debajo de Dirección (NO sidebar)
+   PEGAR AL FINAL DEL CSS
+   ========================================================= */
+
+#carrito .pay-card{
+  /* pisa el sidebar fijo */
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  max-height: none !important;
+  overflow: visible !important;
+
+  /* mismo look/ancho que ship-card */
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+/* Contenedor (Dirección y Pago) centrado y mismo ancho */
+#carrito .ship-row{
+  padding: 0 40px;
+  margin: 0 auto 14px !important;
+  display: flex;
+  justify-content: center;
+}
+
+#carrito .ship-card{
+  width: min(780px, 100%) !important;
+}
+
+/* Pago: 6 botones en 1 fila (desktop), 3x2 (mobile) */
+#carrito .payment-buttons.payment-6{
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+@media (max-width: 900px){
+  #carrito .payment-buttons.payment-6{
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Botón "Prefiero no decidir ahora" a lo ancho */
+#carrito .pay-btn-full{
+  width: 100% !important;
+  margin-top: 10px !important;
+}
+
+/* Ocultar select real (queda para el JS) */
+#carrito #paymentSelect{
+  position: absolute !important;
+  left: -99999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+}
