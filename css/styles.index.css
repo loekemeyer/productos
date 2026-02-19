@@ -133,6 +133,55 @@ footer{
   gap:30px;
 }
 
+.main-footer{
+  background: #212122;
+  color: #fff;
+  padding: 50px 0;
+}
+
+.footer-grid{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.footer-brand{
+  max-width: 420px;
+}
+
+.footer-logo{
+  width: 180px;
+  margin-bottom: 15px;
+}
+
+.footer-brand p{
+  color: #ccc;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.footer-contact{
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.footer-item{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #fff;
+}
+
+.footer-item svg{
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 /* ================= EN DESARROLLO ================= */
 
 .dev-box{
@@ -360,6 +409,7 @@ footer{
   .logo-img{height:44px;}
   .header{padding:0 14px;}
 }
+
 
 
 
