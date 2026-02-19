@@ -168,19 +168,22 @@ footer{
   gap: 15px;
 }
 
+
 .footer-item{
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 14px;
+  gap: 10px;
+  font-size: 15px;
   color: #fff;
 }
 
 .footer-item svg{
-  width: 18px;
-  height: 18px;
+  width: 16px;      /* tamaño correcto estilo imagen 1 */
+  height: 16px;
   flex-shrink: 0;
+  opacity: 0.9;
 }
+
 
 /* ================= EN DESARROLLO ================= */
 
@@ -409,6 +412,7 @@ footer{
   .logo-img{height:44px;}
   .header{padding:0 14px;}
 }
+
 
 
 
