@@ -294,6 +294,9 @@ footer{
 }
 
 .contact-card{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   position:relative;
   background:#fff;
   border:1px solid var(--border);
@@ -302,6 +305,11 @@ footer{
   box-shadow: 0 16px 34px rgba(0,0,0,.10);
   min-height: 210px;
 }
+
+.contact-card .contact-link{
+  margin-top: auto;
+}
+
 
 .contact-icon{
   position:absolute;
@@ -352,6 +360,7 @@ footer{
   .logo-img{height:44px;}
   .header{padding:0 14px;}
 }
+
 
 
 
