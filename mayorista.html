@@ -9,21 +9,39 @@
     <link rel="icon" href="img/favicon.png">
     <link rel="shortcut icon" href="img/favicon.png">
   </head>
+
   <body>
     <header class="header">
-      <div class="logo"><img src="img/logo.png" alt="Loekemeyer" class="logo-img"></div>
+      <div class="logo">
+        <img src="img/logo.png" alt="Loekemeyer" class="logo-img">
+      </div>
+
       <div class="header-center" id="headerCenter"></div>
 
       <nav class="nav">
         <!-- CENTRO: buscador + categorías + productos + pedido (desktop) -->
         <div class="nav-center">
-          <input id="navSearch" class="nav-search" type="search" placeholder="Buscar…" name="catalog_q"
-                 autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
-                 inputmode="search" aria-autocomplete="none" data-form-type="other" list="">
+          <input
+            id="navSearch"
+            class="nav-search"
+            type="search"
+            placeholder="Buscar…"
+            name="catalog_q"
+            autocomplete="off"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            inputmode="search"
+            aria-autocomplete="none"
+            data-form-type="other"
+            list=""
+          >
+
           <div class="dropdown-wrap">
             <a id="categoriesBtn">Categorías ▾</a>
             <div id="categoriesMenu" class="dropdown-menu"></div>
           </div>
+
           <a onclick="goToProductsTop()">Productos</a>
 
           <a id="cartLink" onclick="showSection('carrito')">
@@ -38,6 +56,7 @@
             <img class="micon-cart-img" src="img/cart-icon.webp" alt="">
             <span class="micon-cart-text">Pedido</span> (<span id="mobileCartCount">0</span>)
           </button>
+
           <button id="mobileProfileBtn" class="micon-btn micon-profile" type="button" aria-label="Perfil">
             <img src="img/profile.jpg" alt="Perfil" class="profile-avatar">
           </button>
@@ -45,36 +64,44 @@
 
         <!-- DERECHA (desktop): CTA + Login o UserBox -->
         <div class="nav-right">
-          <a id="ctaCliente" class="btn-quiero-cliente"
-             href="https://wa.me/541131181021?text=Quiero%20ser%20cliente"
-             target="_blank" rel="noopener">
+          <a
+            id="ctaCliente"
+            class="btn-quiero-cliente"
+            href="https://wa.me/541131181021?text=Quiero%20ser%20cliente"
+            target="_blank"
+            rel="noopener"
+          >
             Quiero ser cliente
           </a>
 
           <a id="loginBtn" onclick="openLogin()">Iniciar sesión</a>
 
           <div class="user-box" id="userBox" style="display:none;">
-            <button id="helloNavBtn" class="hello-nav-btn" type="button">Hola!</button>
 
-            <!-- ✅ IMPORTANTE: este ID debe existir EXACTO para que el JS lo encuentre -->
-            <button id="profileBtn" class="profile-btn" type="button" aria-label="Perfil">
-              <img src="img/profile.jpg" alt="Perfil" class="profile-avatar">
-            </button>
+  <!-- ✅ UN SOLO BOTÓN -->
+  <button id="userToggleBtn" class="user-toggle-btn" type="button" aria-expanded="false">
+  <span id="helloNavText" class="user-toggle-text">Hola!</span>
+  <img src="img/profile.jpg" alt="Perfil" class="profile-avatar">
+  <span class="user-toggle-caret">▾</span>
+</button>
 
-            <div class="user-menu" id="userMenu" aria-hidden="true">
-              <!-- ✅ Cambiado: ahora abre Perfil -->
-              <button id="menuMyOrders" class="user-menu-item" type="button" onclick="openProfile()">
-                Mi perfil
-              </button>
+  <div class="user-menu" id="userMenu" aria-hidden="true">
+    <button id="menuMyOrders" class="user-menu-item" type="button" onclick="openProfile()">
+      Mi perfil
+    </button>
 
-              <button id="menuChangePass" class="user-menu-item" type="button" onclick="openChangePassword()">
-                Cambiar contraseña
-              </button>
+    <button id="menuChangePass" class="user-menu-item" type="button" onclick="openChangePassword()">
+      Cambiar contraseña
+    </button>
 
-              <div class="user-menu-sep" role="separator" aria-hidden="true"></div>
-              <button class="user-menu-item danger" type="button" onclick="logout()">Cerrar sesión</button>
-            </div>
-          </div>
+    <div class="user-menu-sep" role="separator" aria-hidden="true"></div>
+
+    <button class="user-menu-item danger" type="button" onclick="logout()">
+      Cerrar sesión
+    </button>
+  </div>
+</div>
+
         </div>
       </nav>
     </header>
@@ -109,32 +136,29 @@
 
         <main class="products-main">
           <div class="sort-row">
+            <!-- DESKTOP: BOTONES -->
+            <div id="desktopSortButtons" class="desktop-sort-buttons" aria-label="Ordenar por">
+              <button type="button" class="ds-btn" data-sort="category">Categorías</button>
+              <button type="button" class="ds-btn" data-sort="bestsellers">Más vendidos</button>
+              <button type="button" class="ds-btn" data-sort="price_desc">Mayor a menor precio</button>
+              <button type="button" class="ds-btn" data-sort="price_asc">Menor a mayor precio</button>
+            </div>
 
-  <!-- DESKTOP: BOTONES -->
-  <div id="desktopSortButtons" class="desktop-sort-buttons" aria-label="Ordenar por">
-    <button type="button" class="ds-btn" data-sort="category">Categorías</button>
-    <button type="button" class="ds-btn" data-sort="bestsellers">Más vendidos</button>
-    <button type="button" class="ds-btn" data-sort="price_desc">Mayor a menor</button>
-    <button type="button" class="ds-btn" data-sort="price_asc">Menor a mayor</button>
-  </div>
+            <!-- MOBILE: Filtros -->
+            <button id="openFiltersBtn" class="filters-btn" type="button" aria-haspopup="dialog">
+              Filtros
+            </button>
 
-  <!-- MOBILE: Filtros -->
-  <button id="openFiltersBtn" class="filters-btn" type="button" aria-haspopup="dialog">
-    Filtros
-  </button>
-
-  <!-- SELECT (Fallback + mobile toolbar compatibilidad) -->
-  <div class="sort-wrap">
-    <select id="sortSelect" class="sort-select" aria-label="Ordenar por">
-      <option value="category" selected>Categorías</option>
-      <option value="bestsellers">Más Vendidos</option>
-      <option value="price_desc">Mayor precio por categoría</option>
-      <option value="price_asc">Menor precio por categoría</option>
-    </select>
-  </div>
-
-</div>
-
+            <!-- SELECT (Fallback) -->
+            <div class="sort-wrap">
+              <select id="sortSelect" class="sort-select" aria-label="Ordenar por">
+                <option value="category" selected>Categorías</option>
+                <option value="bestsellers">Más Vendidos</option>
+                <option value="price_desc">Mayor precio por categoría</option>
+                <option value="price_asc">Menor precio por categoría</option>
+              </select>
+            </div>
+          </div>
 
           <!-- ✅ Overlay filtros -->
           <div id="filtersOverlay" class="filters-overlay" aria-hidden="true">
@@ -143,7 +167,9 @@
                 <div class="filters-title">Filtros</div>
                 <button id="filtersCancelBtn" class="filters-x" type="button" aria-label="Cerrar">✕</button>
               </div>
+
               <div id="filtersGrid" class="filters-grid"></div>
+
               <div class="filters-actions">
                 <button id="filtersApplyBtn" type="button" class="filters-apply">Aplicar filtros</button>
               </div>
@@ -156,115 +182,243 @@
     </section>
 
     <!-- PERFIL -->
-    <section id="perfil" class="section">
-      <h2 class="section-title">Mi perfil</h2>
+<section id="perfil" class="section">
+  <div class="section-header">
+    <button type="button" class="back-btn" onclick="showSection('productos')">
+      ← Volver a productos
+    </button>
+    <h2 class="section-title">Mi Perfil</h2>
+  </div>
 
-      <div class="profile-wrap">
-        <div class="profile-card">
-          <div class="profile-card-title">Mis pedidos</div>
-          <div id="myOrdersBox" class="profile-box">Cargando…</div>
-        </div>
+  <!-- Datos cliente (3 renglones) -->
+  <div class="profile-summary">
 
-        <div class="profile-card">
-          <div class="profile-card-title">Sucursales de entrega</div>
-          <div id="myAddressesBox" class="profile-box">Cargando…</div>
-          <button type="button" class="profile-btn" id="btnAddAddress">Quiero agregar una sucursal</button>
-        </div>
+  <!-- Razón Social centrada -->
+  <div class="profile-ra">
+    <span id="pfRazonSocial">—</span>
+  </div>
 
-        <div class="profile-card">
-          <div class="profile-card-title">Modificar contraseña</div>
-          <div class="profile-form">
-            <input id="newPass1" type="password" placeholder="Nueva contraseña" />
-            <input id="newPass2" type="password" placeholder="Repetir nueva contraseña" />
-            <button type="button" class="profile-btn" id="btnChangePass">Guardar contraseña</button>
-          </div>
-          <div id="passStatus" class="profile-status" aria-live="polite"></div>
-        </div>
+  <!-- Cod Cliente + CUIT -->
+  <div class="profile-row two">
+    <div><b>Cod Cliente:</b> <span id="pfCodCliente">—</span></div>
+    <div><b>CUIT:</b> <span id="pfCuit">—</span></div>
+  </div>
 
-        <div class="profile-card">
-          <div class="profile-card-title">Soporte</div>
-          <button type="button" class="profile-btn danger" id="btnReportError">Avisar que hay un error</button>
-        </div>
+  <!-- Correo + Dto Vol -->
+  <div class="profile-row two">
+    <div><b>Correo:</b> <span id="pfCorreo">—</span></div>
+    <div><b>Dto Vol:</b> <span id="pfDtoVol">—</span>%</div>
+  </div>
+
+  <!-- Botón contraseña -->
+  <div class="profile-pass-wrap">
+    <button type="button" class="profile-btn" id="btnOpenPassModal">
+      Modificar Contraseña
+    </button>
+  </div>
+
+</div>
+
+
+  <!-- Historial de pedidos -->
+  <div class="profile-card wide">
+    <div class="profile-card-title">Historial de Pedidos</div>
+    <div id="myOrdersBox" class="profile-box">Cargando…</div>
+
+    <div class="profile-card-actions">
+      <button type="button" class="profile-btn subtle" id="btnOrdersToggle">Ver Más</button>
+    </div>
+  </div>
+
+  <!-- Sucursales -->
+  <div class="profile-card wide">
+    <div class="profile-card-title">Sucursales</div>
+    <div id="myAddressesBox" class="profile-box">Cargando…</div>
+
+    <div class="profile-card-actions">
+      <button type="button" class="profile-btn" id="btnAddAddress">Agregar Sucursal</button>
+    </div>
+  </div>
+
+    <!-- Historial de Compras (futuro desarrollo) -->
+    <div class="profile-card wide profile-coming">
+      <div class="profile-card-title">
+      Historial de Compras (últimos 5 años)
+      <span class="coming-badge">Próximamente</span>
+    </div>
+
+  <div class="coming-content">
+    <div class="coming-icon">📊</div>
+    <div class="coming-text">
+      Estamos trabajando en un análisis detallado de tus compras
+      históricas para que puedas visualizar tendencias,
+      evolución de precios y consumo por producto.
+    </div>
+  </div>
+    </div>
+
+
+
+  <!-- Botón rojo centrado antes del footer -->
+  <div class="profile-bottom">
+    <button type="button" class="profile-btn danger big" id="btnReportError">Avisar de un error</button>
+  </div>
+
+  <!-- Modal contraseña (ÚNICO) -->
+  <div id="passModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" id="passModalBackdrop"></div>
+
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="passModalTitle">
+      <div class="modal-title" id="passModalTitle">Modificar contraseña</div>
+
+      <div class="profile-form">
+        <input id="newPass1" type="password" placeholder="Nueva contraseña" />
+        <input id="newPass2" type="password" placeholder="Repetir nueva contraseña" />
+        <button type="button" class="profile-btn" id="btnChangePass">Guardar contraseña</button>
       </div>
-    </section>
+
+      <div class="modal-actions">
+        <button type="button" class="profile-btn subtle" id="btnClosePassModal">Cerrar</button>
+      </div>
+
+      <div id="passStatus" class="profile-status" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
 
     <!-- CARRITO -->
-    <section id="carrito" class="section">
-      <h2 class="section-title">Pedido · Total: $<span id="pedidoTotalHeader">0</span></h2>
+<section id="carrito" class="section">
 
+  <div class="section-header">
+    <button type="button" class="back-btn" onclick="showSection('productos')">
+      ← Volver a productos
+    </button>
+
+    <h2 class="section-title">
+      Pedido · Total: $<span id="pedidoTotalHeader">0</span> <span class="iva-tag">+ IVA</span>
+    </h2>
+  </div>
+
+  <!-- DIRECCIÓN DE ENTREGA (UNA SOLA VEZ) -->
+  <div class="ship-row">
+    <div class="ship-card">
+      <label class="ship-label" for="shippingSelect">
+        Indicar Dirección de Entrega
+      </label>
+
+      <select id="shippingSelect" class="ship-select">
+        <option value="" selected>Elegir Sucursal</option>
+      </select>
+
+      <div class="ship-hint">
+        Seleccioná una opción para poder confirmar el pedido.
+      </div>
+    </div>
+  </div>
+
+      <!-- MÉTODO DE PAGO (DEBAJO, MISMO ANCHO, OBLIGATORIO) -->
       <div class="ship-row">
-        <div class="ship-card">
-          <label class="ship-label" for="shippingSelect">Indicar Dirección de Entrega</label>
-          <select id="shippingSelect" class="ship-select">
-            <option value="" selected>Elegir Sucursal</option>
+        <div class="ship-card pay-card">
+          <div class="pay-title">Método de pago</div>
+
+          <!-- 6 botones iguales en una fila -->
+          <div class="payment-buttons payment-6" id="paymentButtons" aria-label="Método de pago">
+            <button type="button" class="pay-btn" data-value="0.25">
+              <div class="pay-name">Contado</div><div class="pay-off">25% Dto</div>
+            </button>
+            <button type="button" class="pay-btn" data-value="0.20">
+              <div class="pay-name">15–30</div><div class="pay-off">20% Dto</div>
+            </button>
+            <button type="button" class="pay-btn" data-value="0.15">
+              <div class="pay-name">31–45</div><div class="pay-off">15% Dto</div>
+            </button>
+            <button type="button" class="pay-btn" data-value="0.10">
+              <div class="pay-name">46–60</div><div class="pay-off">10% Dto</div>
+            </button>
+            <button type="button" class="pay-btn" data-value="0.05">
+              <div class="pay-name">90</div><div class="pay-off">5% Dto</div>
+            </button>
+            <button type="button" class="pay-btn" data-value="0.00">
+              <div class="pay-name">120</div><div class="pay-off">0% Dto</div>
+            </button>
+          </div>
+
+          <!-- Botón ancho completo -->
+          <button type="button" class="pay-btn pay-btn-full" id="payLaterBtn">
+            Prefiero no decidir ahora
+          </button>
+
+          <!-- Select oculto: arranca SIN selección -->
+          <select id="paymentSelect" onchange="updateCart()">
+            <option value="" selected>Elegir método de pago</option>
+            <option value="0.25">Pago Contado: 25% Dto</option>
+            <option value="0.20">Pago 15-30 días: 20% Dto</option>
+            <option value="0.15">Pago 31-45 días: 15% Dto</option>
+            <option value="0.10">Pago 46-60 días: 10% Dto</option>
+            <option value="0.05">Pago 90 días Echeq: 5% Dto</option>
+            <option value="0.00">Pago 120 días Echeq: 0% Dto</option>
           </select>
-          <div class="ship-hint">Seleccioná una opción para poder confirmar el pedido.</div>
+
+
+          <div class="web-note">
+            <div class="web-note-title">Dto Pedido Web</div>
+            <div class="web-note-value"><strong>2.5%</strong> (aplicado)</div>
+          </div>
+
+          <div class="ship-hint">Seleccioná un método de pago para poder confirmar el pedido.</div>
         </div>
       </div>
 
-      <div class="cart-layout">
-        <aside class="pay-column">
-          <div class="pay-card">
-            <div class="pay-title">Método de pago</div>
-
-            <div class="payment-buttons" id="paymentButtons" aria-label="Método de pago">
-              <button type="button" class="pay-btn" data-value="0.25">
-                <div class="pay-name">Contado</div><div class="pay-off">25% Dto</div>
-              </button>
-              <button type="button" class="pay-btn" data-value="0.20">
-                <div class="pay-name">15–30 días</div><div class="pay-off">20% Dto</div>
-              </button>
-              <button type="button" class="pay-btn" data-value="0.15">
-                <div class="pay-name">31–45 días</div><div class="pay-off">15% Dto</div>
-              </button>
-              <button type="button" class="pay-btn" data-value="0.10">
-                <div class="pay-name">46–60 días</div><div class="pay-off">10% Dto</div>
-              </button>
-              <button type="button" class="pay-btn" data-value="0.05">
-                <div class="pay-name">90 días Echeq</div><div class="pay-off">5% Dto</div>
-              </button>
-              <button type="button" class="pay-btn" data-value="0.00">
-                <div class="pay-name">120 días Echeq</div><div class="pay-off">0% Dto</div>
-              </button>
-            </div>
-
-            <select id="paymentSelect" onchange="updateCart()">
-              <option value="0.25">Pago Contado: 25% Dto</option>
-              <option value="0.20">Pago 15-30 días: 20% Dto</option>
-              <option value="0.15">Pago 31-45 días: 15% Dto</option>
-              <option value="0.10">Pago 46-60 días: 10% Dto</option>
-              <option value="0.05">Pago 90 días Echeq: 5% Dto</option>
-              <option value="0.00">Pago 120 días Echeq: 0% Dto</option>
-            </select>
-
-            <div class="web-note">
-              <div class="web-note-title">Dto Pedido Web</div>
-              <div class="web-note-value"><strong>2.5%</strong> (aplicado)</div>
-            </div>
-          </div>
-        </aside>
-
-        <main class="cart-column">
-          <div class="cart" id="cart"></div>
-        </main>
+      <!-- CARRITO (ABAJO, ANCHO COMPLETO) -->
+      <div class="cart-layout cart-layout-single">
+        <div class="cart" id="cart"></div>
       </div>
 
+      <!-- TOTALES -->
       <div class="cart-total">
         <div class="totals-inner">
-          <div class="totals-line"><span>Subtotal (Tu Precio):</span><strong>$<span id="subtotal">0</span></strong></div>
-          <div class="totals-line"><span>Dto Pedido Web (2.5%):</span><strong>− $<span id="webDiscountValue">0</span></strong></div>
-          <div class="totals-line"><span>Dto por método de pago: <span id="paymentDiscountPercent">0%</span></span><strong>− $<span id="paymentDiscountValue">0</span></strong></div>
-          <h3 class="grand-total">Total del pedido: $<span id="total">0</span></h3>
+          <div class="totals-line">
+            <span>Subtotal (Tu Precio):</span>
+            <strong>$<span id="subtotal">0</span></strong>
+          </div>
+          <div class="totals-line">
+            <span>Dto Pedido Web (2.5%):</span>
+            <strong>− $<span id="webDiscountValue">0</span></strong>
+          </div>
+          <div class="totals-line">
+            <span>Dto por método de pago: <span id="paymentDiscountPercent">0%</span></span>
+            <strong>− $<span id="paymentDiscountValue">0</span></strong>
+          </div>
+
+          <h3 class="grand-total">
+          Total del pedido: $<span id="total">0</span> <span class="iva-tag">+ IVA</span>
+          </h3>
+
           <div class="totals-divider"></div>
-          <div class="totals-line"><span>Pedido sin descuentos (Precio Lista):</span><strong>$<span id="totalNoDiscount">0</span></strong></div>
-          <div class="totals-line"><span>Total descuentos aplicados:</span><strong>− $<span id="totalDiscounts">0</span></strong></div>
+
+          <div class="totals-line">
+            <span>Pedido sin descuentos (Precio Lista):</span>
+            <strong>$<span id="totalNoDiscount">0</span></strong>
+          </div>
+          <div class="totals-line">
+            <span>Total descuentos aplicados:</span>
+            <strong>− $<span id="totalDiscounts">0</span></strong>
+          </div>
         </div>
       </div>
 
+      <!-- ACCIONES -->
       <div class="order-actions">
-        <button class="back back-outline" onclick="showSection('productos')">Seguir agregando productos</button>
+        <button class="back back-outline" onclick="showSection('productos')">
+          Seguir agregando productos
+        </button>
+
         <div id="orderStatus" class="order-status" aria-live="polite"></div>
-        <button id="submitOrderBtn" class="submit-order" onclick="submitOrder()">Confirmar pedido</button>
+
+        <button id="submitOrderBtn" class="submit-order" onclick="submitOrder()" disabled>
+        Confirmar pedido     </button>
+
       </div>
     </section>
 
@@ -277,20 +431,31 @@
           <h3>Iniciar sesión</h3>
           <button class="modal-close" onclick="closeLogin()">✕</button>
         </div>
+
         <div class="modal-body">
           <label>CUIT</label>
           <input id="cuitInput" type="text" placeholder="Ej: 11-11111111-1" inputmode="numeric" maxlength="13">
+
           <label>Contraseña</label>
           <input id="passInput" type="password" placeholder="Contraseña">
+
           <div class="modal-error" id="loginError" style="display:none;"></div>
+
           <button class="modal-submit" onclick="login()">Ingresar</button>
+
           <p class="modal-hint">Los precios se muestran solo luego de iniciar sesión.</p>
-          <a id="ctaClienteModal" class="btn-quiero-cliente modal-cta"
-             href="https://wa.me/541131181021?text=Quiero%20ser%20cliente"
-             target="_blank" rel="noopener">Quiero ser cliente</a>
+
+          <a
+            id="ctaClienteModal"
+            class="btn-quiero-cliente modal-cta"
+            href="https://wa.me/541131181021?text=Quiero%20ser%20cliente"
+            target="_blank"
+            rel="noopener"
+          >
+            Quiero ser cliente
+          </a>
         </div>
-      </div>
-    </div>
+      </div> 
 
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -298,3 +463,4 @@
     <script src="script.js"></script>
   </body>
 </html>
+ 
