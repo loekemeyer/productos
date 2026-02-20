@@ -184,6 +184,15 @@ footer{
   opacity: 0.9;
 }
 
+.footer-bottom{
+  margin-top: 35px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,.1);
+  text-align: center;
+  font-size: 13px;
+  color: #aaa;
+}
+
 
 /* ================= EN DESARROLLO ================= */
 
@@ -534,6 +543,7 @@ footer{
 .clientes-carousel:hover .clientes-track{
   animation-play-state: paused;
 }
+
 
 
 
