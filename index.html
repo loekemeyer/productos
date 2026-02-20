@@ -238,8 +238,15 @@
 
   </div>
 	<div class="footer-bottom">
- 	 © 2026 Loekemeyer SRL — Todos los derechos reservados.
-	</div>
+  <div class="container footer-bottom-row">
+    <span>© 2026 Loekemeyer SRL — Todos los derechos reservados.</span>
+
+    <div class="footer-links">
+      <a href="#" class="footer-link" data-modal="privacy">Política de privacidad</a>
+      <a href="#" class="footer-link" data-modal="terms">Términos y condiciones</a>
+    </div>
+  </div>
+</div>
 	  
 </footer>
 
@@ -267,8 +274,20 @@
   </a>
 
   <script src="script.index.js"></script>
+
+	<!-- ================= MODAL LEGAL ================= -->
+<div class="modal-backdrop" id="legalModal" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+    <button class="modal-close" type="button" aria-label="Cerrar">✕</button>
+    <h3 id="legalTitle">Título</h3>
+    <div class="modal-content" id="legalContent">
+      test
+    </div>
+  </div>
+</div>
 </body>
 </html>
+
 
 
 
