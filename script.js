@@ -2574,4 +2574,23 @@ document.addEventListener('keydown', (e) => {
 
     syncPaymentButtons();
   });
+
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btnOpenHistorialCompras");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    // tomar cod cliente del perfil ya cargado
+    const cod = document.getElementById("pfCodCliente")?.textContent?.trim();
+
+    if (!cod) {
+      alert("No se detectó el cliente logueado");
+      return;
+    }
+
+    // abrir historial pasando el cliente
+    window.location.href = `./historial.html?c=${cod}`;
+  });
 });
