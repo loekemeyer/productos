@@ -160,7 +160,6 @@ function initLegalModals(){
   terms: {
     title: "Términos y Condiciones de Uso",
     html: `
-      <p><strong>LOEKEMEYER SRL</strong><br>
       Última actualización: <em>20/02/2026</em></p>
 
       <hr>
@@ -279,5 +278,6 @@ function initLegalModals(){
 }
 
 document.addEventListener("DOMContentLoaded", initLegalModals);
+
 
 
