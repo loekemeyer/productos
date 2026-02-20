@@ -455,7 +455,7 @@ footer{
 /* ================= REDES SOCIALES ================= */
 
 .social-section{
-  padding: 80px 0;
+  padding: 40px 0;
   background: #fff;
 }
 
@@ -485,7 +485,7 @@ footer{
 /* ================= CLIENTES ================= */
 
 .clientes-section{
-  padding: 80px 0;
+  padding: 40px 0;
   background: #f7f7f7;
   overflow: hidden;
 }
@@ -534,6 +534,7 @@ footer{
 .clientes-carousel:hover .clientes-track{
   animation-play-state: paused;
 }
+
 
 
 
