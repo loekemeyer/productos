@@ -3246,4 +3246,12 @@ body {
   font-size:medium;
   border-width: 3px;
   border-color: #e60000;
+
+}
+
+.profile-card-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
 }
