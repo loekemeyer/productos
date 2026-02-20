@@ -21,7 +21,8 @@ img{max-width:100%;display:block}
 
 .hero{
   position: relative;
-  height: 100vh;
+  height: 65vh;              /* ← proporción más equilibrada */
+  min-height: 480px;         /* evita que quede muy chico en pantallas bajas */
   background: url("../gif/bg.gif") center center / cover no-repeat;
   display: flex;
   align-items: center;
@@ -620,6 +621,7 @@ footer{
 .clientes-carousel:hover .clientes-track{
   animation-play-state: paused;
 }
+
 
 
 
