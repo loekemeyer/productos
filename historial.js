@@ -1,3 +1,8 @@
+// BLOQUEO SI NO HAY SESIÓN
+if (!localStorage.getItem("is_logged")) {
+  window.location.href = "index.html";
+}
+
 // ====================== CONFIG ======================
 const SUPABASE_URL = "https://flgavcfamdsodrhakqen.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_G9QvEtPwGp80_6NUneseVg_V5mfmLfY";
