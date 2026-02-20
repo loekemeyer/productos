@@ -2637,25 +2637,50 @@ function getCodClienteFromProfileOrStorage() {
   return (ls || "").trim();
 }
 
-function abrirHistorial(vista) {
-  // intento 1: directo
-  let cod = getCodClienteFromProfileOrStorage();
-  if (cod) {
-    window.location.href = `./historial.html?c=${encodeURIComponent(cod)}&v=${encodeURIComponent(vista)}`;
-    return;
-  }
+// ===== HISTORIAL / SUGERENCIAS / NOVEDADES =====
 
-  // intento 2: abro "Mi perfil" para forzar a que se cargue pfCodCliente
+function getCodClienteFromProfileOrStorage() {
+  const dom = (document.getElementById("pfCodCliente")?.textContent || "").trim();
+  if (dom && dom !== "—") return dom;
+
+  const ls =
+    localStorage.getItem("cod_cliente") ||
+    localStorage.getItem("codCliente") ||
+    localStorage.getItem("cliente") ||
+    localStorage.getItem("customer") ||
+    localStorage.getItem("customer_id") ||
+    "";
+
+  return (ls || "").trim();
+}
+
+function abrirHistorial(vista) {
+
+  const ir = (cod) => {
+    window.location.href =
+      `./historial.html?c=${encodeURIComponent(cod)}&v=${encodeURIComponent(vista)}`;
+  };
+
+  // intento 1: ya cargado
+  let cod = getCodClienteFromProfileOrStorage();
+  if (cod && cod !== "—") return ir(cod);
+
+  // intento 2: abro perfil y espero que cargue el código
   if (typeof openProfile === "function") openProfile();
 
-  setTimeout(() => {
+  const start = Date.now();
+
+  const timer = setInterval(() => {
     cod = getCodClienteFromProfileOrStorage();
 
-    if (!cod) {
-      alert("No pude detectar el Código de Cliente. Abrí 'Mi perfil' y probá de nuevo.");
-      return;
+    if (cod && cod !== "—") {
+      clearInterval(timer);
+      return ir(cod);
     }
 
-    window.location.href = `./historial.html?c=${encodeURIComponent(cod)}&v=${encodeURIComponent(vista)}`;
-  }, 250);
+    if (Date.now() - start > 3000) {
+      clearInterval(timer);
+      alert("No se detectó el código de cliente.");
+    }
+  }, 100);
 }
