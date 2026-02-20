@@ -24,7 +24,7 @@ const SHEETS_SECRET = 'Damian.10.2026.WEB';
  ***********************/
 const WEB_ORDER_DISCOUNT = 0.025; // 2.5% siempre
 const BASE_IMG = `${SUPABASE_URL}/storage/v1/object/public/products-images/`;
-const IMG_VERSION = '2026-02-06-2'; // cambiá esto cuando actualices imágenes
+const IMG_VERSION = '2026-02-20-2'; // cambiá esto cuando actualices imágenes
 
 /***********************
  * ORDEN FIJO (como pediste)
@@ -58,7 +58,6 @@ const UTENSILIOS_SUB_ORDER = [
   'Nylon',
 ];
 
-
 function pick(obj, keys) {
   const out = {};
   for (const k of keys) if (obj[k] !== undefined) out[k] = obj[k];
@@ -84,10 +83,12 @@ let sortMode = 'category'; // category | bestsellers | price_desc | price_asc
 let filterAll = true; // "Todos" ON por default
 let filterCats = new Set(); // acumulativo
 let searchTerm = ''; // buscador
+let filterNewOnly = false;        // ✅ NUEVOS (desktop + mobile)
 
 // ===== Mobile Filters (pendientes) =====
 let pendingFilterAll = true;
 let pendingFilterCats = new Set();
+let pendingFilterNewOnly = false; // ✅ NUEVOS (overlay mobile)
 
 /***********************
  * DOM HELPERS
@@ -994,38 +995,107 @@ async function loadMyAddressesUI() {
 }
 
 async function changePasswordUI() {
-  const s = $('passStatus');
-  const p1 = ($('newPass1')?.value || '').trim();
-  const p2 = ($('newPass2')?.value || '').trim();
+  if (window.__changingPass) return;
+  window.__changingPass = true;
+  const statusEl = document.getElementById('passStatus');
+  const btn = document.getElementById('btnChangePass');
 
-  if (!s) return;
-  s.textContent = '';
+  const p1 = String(document.getElementById('newPass1')?.value || '').trim();
+  const p2 = String(document.getElementById('newPass2')?.value || '').trim();
 
-  if (!currentSession) {
-    s.textContent = 'Tenés que iniciar sesión.';
-    return;
+  const setStatus = (t) => { if (statusEl) statusEl.textContent = t; };
+
+  // Validaciones
+  if (!currentSession) { setStatus('Tenés que iniciar sesión.'); return; }
+  if (!p1 || !p2) { setStatus('Completá ambos campos.'); return; }
+  if (!/^\d+$/.test(p1) || !/^\d+$/.test(p2)) { setStatus('La contraseña debe ser solo numérica.'); return; }
+  if (p1.length < 6) { setStatus('La contraseña debe tener al menos 6 números.'); return; }
+  if (p1 !== p2) { setStatus('Las contraseñas no coinciden.'); return; }
+
+  btn && (btn.disabled = true);
+  setStatus('Guardando…');
+
+  try {
+    // 1) Obtener sesión fresca (token)
+    const { data: sessData, error: sessErr } = await supabaseClient.auth.getSession();
+    if (sessErr) throw sessErr;
+
+    let session = sessData?.session;
+
+    // si por alguna razón no hay session, pedimos re-login
+    if (!session?.access_token) {
+      setStatus('⚠️ Tu sesión no está disponible. Cerrá sesión e iniciá sesión de nuevo.');
+      return;
+    }
+
+    // 2) Llamada directa a Supabase Auth (PUT /auth/v1/user)
+    const controller = new AbortController();
+    const TIMEOUT_MS = 15000;
+    const t = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    // Si tenés el PIN actual guardado en customerProfile, evitamos setear el mismo
+const pinActual = String(customerProfile?.pin ?? '').trim();
+if (pinActual && String(p1) === pinActual) {
+  setStatus('❌ El PIN nuevo no puede ser igual al actual.');
+  btn && (btn.disabled = false);
+  return;
+}
+
+    const resp = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: 'PUT',
+      signal: controller.signal,
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password: p1 }),
+    });
+
+    clearTimeout(t);
+
+    if (!resp.ok) {
+      const txt = await resp.text().catch(() => '');
+      throw new Error(`Auth ${resp.status}: ${txt || resp.statusText}`);
+    }
+
+    setStatus('✅ Contraseña actualizada.');
+
+        // ✅ Actualizar PIN en customers (por auth_user_id) + confirmar resultado
+    try {
+      const newPin = Number(p1); // pin es int8 => mandamos número
+
+      const { data: upRow, error: upErr } = await supabaseClient
+        .from('customers')
+        .update({ pin: newPin })
+        .eq('auth_user_id', currentSession.user.id)   // ✅ clave para RLS
+        .select('pin')
+        .single();
+
+      if (upErr) throw upErr;
+
+      // refrescar cache local (así la próxima validación "mismo pin" funciona)
+      if (customerProfile) customerProfile.pin = upRow?.pin;
+
+      // opcional: dejar un OK explícito
+      // setStatus('✅ Contraseña actualizada y PIN guardado.');
+    } catch (e) {
+      console.warn('PIN no se pudo actualizar en customers:', e);
+      setStatus('✅ Contraseña actualizada. ⚠️ No se pudo guardar el PIN en customers (RLS).');
+    }
+
+    document.getElementById('newPass1').value = '';
+    document.getElementById('newPass2').value = '';
+  } catch (err) {
+    if (String(err?.name) === 'AbortError') {
+      setStatus('❌ Timeout al actualizar contraseña (red/bloqueo).');
+    } else {
+      setStatus(`❌ ${String(err?.message || err)}`);
+    }
+  } finally {
+    btn && (btn.disabled = false);
+    window.__changingPass = false;
   }
-
-  if (!p1 || p1.length < 6) {
-    s.textContent = 'La contraseña debe tener al menos 6 caracteres.';
-    return;
-  }
-
-  if (p1 !== p2) {
-    s.textContent = 'Las contraseñas no coinciden.';
-    return;
-  }
-
-  const { error } = await supabaseClient.auth.updateUser({ password: p1 });
-
-  if (error) {
-    s.textContent = 'No se pudo cambiar la contraseña.';
-    return;
-  }
-
-  s.textContent = 'Contraseña actualizada.';
-  if ($('newPass1')) $('newPass1').value = '';
-  if ($('newPass2')) $('newPass2').value = '';
 }
 
 function fillProfileSummaryUI() {
@@ -1086,10 +1156,19 @@ function getFilteredProducts() {
     });
   }
 
-  let list = products.slice();
+    let list = products.slice();
+
   if (!filterAll) {
     list = list.filter((p) => filterCats.has(String(p.category || '').trim()));
   }
+
+  // ✅ NUEVOS: mismo criterio que tu badge "NUEVO"
+  if (filterNewOnly) {
+    list = list.filter(
+      (p) => p.ranking === null || p.ranking === undefined || String(p.ranking).trim() === ''
+    );
+  }
+
   return list;
 }
 
@@ -1344,6 +1423,7 @@ function openFiltersOverlay() {
 
   pendingFilterAll = filterAll;
   pendingFilterCats = new Set(filterCats);
+  pendingFilterNewOnly = filterNewOnly;
 
   renderFiltersOverlayUI();
 
@@ -1362,6 +1442,7 @@ function closeFiltersOverlay() {
 function applyPendingFilters() {
   filterAll = pendingFilterAll;
   filterCats = new Set(pendingFilterCats);
+  filterAll = pendingFilterAll;
 
   renderCategoriesMenu();
   renderCategoriesSidebar();
@@ -1386,6 +1467,10 @@ function renderFiltersOverlayUI() {
       Todos los artículos
     </button>
 
+    <button type="button" class="mf-btn ${pendingFilterNewOnly ? 'on' : ''}" data-new="1">
+    NUEVOS
+  </button>
+
     ${ordered
       .map(
         (cat) => `
@@ -1401,6 +1486,13 @@ function renderFiltersOverlayUI() {
     btn.addEventListener('click', () => {
       const isAll = btn.dataset.all === '1';
       const cat = btn.dataset.cat;
+      const isNew = btn.dataset.new === '1';
+
+      if (isNew) {
+      pendingFilterNewOnly = !pendingFilterNewOnly;
+      renderFiltersOverlayUI();
+      return;
+      }
 
       if (isAll) {
         pendingFilterAll = true;
@@ -1462,6 +1554,106 @@ async function loadDeliveryOptions() {
   updateCart();
 }
 
+// =============================
+// UX: fly-to-cart + toast "Ver pedido"
+// =============================
+let __viewOrderShowTimer = null;
+let __viewOrderHideTimer = null;
+
+function getVisibleCartIconEl() {
+  // Desktop icon
+  const desktop = document.getElementById('cartIcon');
+  if (desktop && desktop.offsetParent !== null) return desktop;
+
+  // Mobile icon (dentro del botón)
+  const mobileBtn = document.getElementById('mobileCartBtn');
+  if (mobileBtn && mobileBtn.offsetParent !== null) {
+    const img = mobileBtn.querySelector('img');
+    return img || mobileBtn;
+  }
+
+  // fallback: link del carrito
+  const link = document.getElementById('cartLink');
+  if (link && link.offsetParent !== null) return link;
+
+  return null;
+}
+
+function flyProductImageToCart(productId) {
+  const img = document.getElementById(`img-${productId}`);
+  const target = getVisibleCartIconEl();
+  if (!img || !target) return;
+
+  const r1 = img.getBoundingClientRect();
+  const r2 = target.getBoundingClientRect();
+  if (!r1.width || !r1.height || !r2.width || !r2.height) return;
+
+  const clone = img.cloneNode(true);
+  clone.className = 'fly-to-cart';
+  clone.style.left = `${r1.left}px`;
+  clone.style.top = `${r1.top}px`;
+  clone.style.width = `${r1.width}px`;
+  clone.style.height = `${r1.height}px`;
+  clone.style.opacity = '1';
+  clone.style.transform = 'translate3d(0,0,0) scale(1)';
+
+  document.body.appendChild(clone);
+
+  const dx = (r2.left + r2.width / 2) - (r1.left + r1.width / 2);
+  const dy = (r2.top + r2.height / 2) - (r1.top + r1.height / 2);
+
+  // start anim next frame
+  requestAnimationFrame(() => {
+    clone.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(0.15)`;
+    clone.style.opacity = '0';
+  });
+
+  clone.addEventListener('transitionend', () => clone.remove(), { once: true });
+}
+
+function hideViewOrderToast() {
+  const t = document.getElementById('viewOrderToast');
+  if (!t) return;
+  t.classList.remove('show');
+  t.setAttribute('aria-hidden', 'true');
+}
+
+function positionViewOrderToastBelowHeader() {
+  const header = document.querySelector('header') || document.querySelector('.header');
+  const toast = document.getElementById('viewOrderToast');
+  if (!header || !toast) return;
+
+  const headerRect = header.getBoundingClientRect();
+  const offset = Math.max(0, headerRect.bottom + 10); // 10px de aire
+
+  toast.style.top = `${offset}px`;
+}
+
+function showViewOrderToast() {
+  const t = document.getElementById('viewOrderToast');
+  if (!t) return;
+
+  positionViewOrderToastBelowHeader();
+
+  t.classList.add('show');
+  t.setAttribute('aria-hidden', 'false');
+}
+
+function scheduleViewOrderToastAfterAdd() {
+  // no acumulativo: si agregás otra vez, resetea el “3s visible”
+  clearTimeout(__viewOrderShowTimer);
+  clearTimeout(__viewOrderHideTimer);
+
+  // aparece rápido (80ms) para que se sienta “instantáneo”
+  __viewOrderShowTimer = setTimeout(() => {
+    showViewOrderToast();
+
+    // y se oculta 3s después de aparecer
+    clearTimeout(__viewOrderHideTimer);
+    __viewOrderHideTimer = setTimeout(() => hideViewOrderToast(), 3000);
+  }, 80);
+}
+
 /***********************
  * CART
  ***********************/
@@ -1472,11 +1664,19 @@ function addFirstBox(productId) {
   }
 
   const existing = cart.find((i) => i.productId === productId);
-  if (existing) existing.qtyCajas += 1;
-  else {
+
+  if (existing) {
+    existing.qtyCajas += 1;
+  } else {
+    // ✅ SOLO la primera vez que se agrega ese producto: animación “viaja al carrito”
+    flyProductImageToCart(productId);
+
     cart.push({ productId, qtyCajas: 1 });
     toggleControls(productId, true);
   }
+
+  // ✅ Toast: 3s después del último “agregar” (no acumulativo)
+  scheduleViewOrderToastAfterAdd();
 
   updateCart();
   renderProducts();
@@ -1731,7 +1931,6 @@ async function sendOrderToSheets({
   return { ok: true };
 }
 
-
 async function withTimeout(promise, ms, label = 'timeout') {
   let t;
   const timeout = new Promise((_, reject) => {
@@ -1892,7 +2091,6 @@ const resItems = await withTimeout(
   }
 }
 
-
 function refreshSubmitEnabled() {
   const btn = document.getElementById('submitOrderBtn');
   if (!btn) return;
@@ -1914,26 +2112,55 @@ async function openMyOrders() {
 }
 window.openMyOrders = openMyOrders;
 
-async function openChangePassword() {
+function openChangePassword() {
   if (!currentSession) { openLogin(); return; }
 
-  showSection('perfil');      // ✅ te lleva al perfil
-  closeUserMenu?.();          // ✅ cierra el menú si existe
+  showSection('perfil');
+  closeUserMenu?.();
 
-  // ✅ abre el modal
-  const passModal = document.getElementById("passModal");
-  if (passModal) {
-    passModal.classList.remove("hidden");
-    passModal.setAttribute("aria-hidden", "false");
-    document.getElementById("newPass1")?.focus();
-  }
+  // ✅ abrir usando la función global del modal (la del PASO 1)
+  // Esperamos 1 tick para asegurar que el DOM del perfil esté visible
+  setTimeout(() => {
+    if (typeof window.openPassModal === 'function') {
+      window.openPassModal();
+    } else {
+      // fallback por si algo falló
+      const passModal = document.getElementById('passModal');
+      if (passModal) {
+        passModal.classList.remove('hidden');
+        passModal.setAttribute('aria-hidden', 'false');
+        document.getElementById('newPass1')?.focus();
+      }
+    }
+  }, 0);
 }
 window.openChangePassword = openChangePassword;
+
+function openPassModal() {
+  const passModal = document.getElementById('passModal');
+  if (!passModal) return;
+
+  passModal.classList.add('open'); // ✅ clave
+  passModal.classList.remove('hidden'); // por si existe
+  passModal.setAttribute('aria-hidden', 'false');
+
+  document.getElementById('newPass1')?.focus();
+}
+
+function closePassModal() {
+  const passModal = document.getElementById('passModal');
+  if (!passModal) return;
+
+  passModal.classList.remove('open'); // ✅ clave
+  passModal.classList.add('hidden');
+  passModal.setAttribute('aria-hidden', 'true');
+}
 
 /***********************
  * INIT (arranque de la web) — CORREGIDO ✅
  ***********************/
 document.addEventListener('DOMContentLoaded', async () => {
+
   // Exponer funciones al HTML (onclick)
   window.showSection = showSection;
   window.goToProductsTop = goToProductsTop;
@@ -1948,6 +2175,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.removeItem = removeItem;
   window.updateCart = updateCart;
   window.submitOrder = submitOrder;
+  window.openProfile = openProfile;
+  window.openChangePassword = openChangePassword;
 
   // =============================
   // SORT (desktop botones + selects + mobile) ✅ ÚNICO BLOQUE
@@ -1966,6 +2195,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const s2 = $('mobileSortSelect');
     if (s2) s2.value = sortMode;
   }
+
+  function syncNewFilterBtn() {
+  const b = $('btnFilterNew');
+  if (b) b.classList.toggle('on', !!filterNewOnly);
+}
+
+$('btnFilterNew')?.addEventListener('click', () => {
+  filterNewOnly = !filterNewOnly;
+  syncNewFilterBtn();
+  renderProducts();
+});
+
+// TOAST VER PEDIDOS
+window.addEventListener('resize', positionViewOrderToastBelowHeader);
+
+// al iniciar
+syncNewFilterBtn();
 
   async function setSortMode(next) {
     sortMode = String(next || 'category');
@@ -2061,6 +2307,68 @@ document.addEventListener('DOMContentLoaded', async () => {
     e.stopPropagation();
     toggleCategoriesMenuFixed();
   });
+
+// Ver Pedido animacion
+document.getElementById('viewOrderBtn')?.addEventListener('click', () => {
+  hideViewOrderToast();
+  showSection('carrito');
+});
+
+  // =============================
+// PASSWORD MODAL: abrir desde menú + perfil
+// =============================
+document.getElementById('menuChangePass')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  // 1) cerrar menú SIN aria-hidden primero (para evitar warnings y focus issues)
+  const um = document.getElementById('userMenu');
+  if (um) {
+    um.classList.remove('open');
+    um.removeAttribute('aria-hidden');
+  }
+  document.getElementById('userToggleBtn')?.setAttribute('aria-expanded', 'false');
+
+  // 2) quitar foco del botón del menú
+  e.currentTarget?.blur();
+
+  // 3) ir a perfil
+  showSection('perfil');
+
+  // 4) abrir modal en el próximo tick (cuando ya cambió la sección)
+  setTimeout(() => {
+    openPassModal();
+  }, 0);
+});
+
+document.getElementById('mobileMenuChangePass')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  closeMobileUserMenu?.();
+  e.currentTarget?.blur();
+  showSection('perfil');
+
+  setTimeout(() => {
+    openPassModal();
+  }, 0);
+});
+
+// Botón dentro del perfil
+document.getElementById('btnOpenPassModal')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  openPassModal();
+});
+
+// Cierres
+document.getElementById('btnClosePassModal')?.addEventListener('click', closePassModal);
+document.getElementById('passModalBackdrop')?.addEventListener('click', closePassModal);
+document.getElementById('btnChangePass')?.addEventListener('click', changePasswordUI);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closePassModal();
+});
 
   // =============================
   // USER MENU DESKTOP (BOTÓN ÚNICO userToggleBtn)
@@ -2171,34 +2479,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // =============================
   // PERFIL - Modal contraseña (UNA SOLA VEZ)
   // =============================
-  (function initPassModal() {
-    const passModal = $('passModal');
-    const btnOpen = $('btnOpenPassModal');
-    const btnClose = $('btnClosePassModal');
-    const backdrop = $('passModalBackdrop');
-
-    function openPassModal() {
-      if (!passModal) return;
-      passModal.classList.remove('hidden');
-      passModal.setAttribute('aria-hidden', 'false');
-      $('newPass1')?.focus();
-    }
-
-    function closePassModal() {
-      if (!passModal) return;
-      passModal.classList.add('hidden');
-      passModal.setAttribute('aria-hidden', 'true');
-    }
-
-    btnOpen?.addEventListener('click', openPassModal);
-    btnClose?.addEventListener('click', closePassModal);
-    backdrop?.addEventListener('click', closePassModal);
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closePassModal();
-    });
-  })();
-
+  
   // Entregas
   const shipSel = $('shippingSelect');
   if (shipSel) {

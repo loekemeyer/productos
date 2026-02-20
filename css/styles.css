@@ -983,6 +983,78 @@ body {
     text-align: center;
     padding: 30px;
 }
+/* ================= MODAL LOGIN ================= */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    padding: 20px;
+}
+.modal.open {
+    display: flex;
+}
+.modal-content {
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #eee;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    border-bottom: 1px solid #eee;
+}
+.modal-close {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 18px;
+}
+.modal-body {
+    padding: 18px;
+    display: grid;
+    gap: 10px;
+}
+.modal-body label {
+    font-size: 13px;
+    color: #444;
+}
+.modal-body input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+.modal-submit {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #000;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 6px;
+}
+.modal-error {
+    color: #b00020;
+    font-size: 13px;
+}
+.modal-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 6px;
+}
+.modal-cta {
+    margin-top: 10px;
+    width: 100%;
+    justify-content: center;
+}
 /* ================= HAMBURGER MENU (mobile) ================= */
 .hamburger {
     display: none;
@@ -3061,6 +3133,117 @@ body {
 
 .profile-pass-wrap{
   margin-top:22px;
-
 }
 
+/* Botón filtro NUEVOS (desktop) */
+.ds-btn.ds-filter{
+  margin-left: 10px;
+  border: 1px solid #e2e2e2;
+  background: #fff;
+}
+
+.ds-btn.ds-filter.on{
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* ===== PASS MODAL (perfil) ===== */
+.modal .modal-backdrop{
+  position:absolute;
+  inset:0;
+}
+
+.modal .modal-card{
+  position:relative;
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #eee;
+  z-index: 1;
+  padding: 18px;
+}
+
+.modal .modal-title{
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.modal .modal-actions{
+  margin-top: 12px;
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
+
+/* =========================
+   ANIMACIÓN "VOLAR AL CARRITO"
+   ========================= */
+.fly-to-cart {
+  position: fixed;
+  z-index: 30000;
+  pointer-events: none;
+  will-change: transform, opacity;
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.25);
+  transition: transform 650ms cubic-bezier(.2,.9,.2,1), opacity 650ms ease;
+}
+
+/* =========================
+   TOAST "VER PEDIDO"
+   ========================= */
+.view-order-toast {
+  position: fixed;
+  right: 14px;
+  z-index: 35000;
+  display: none;
+}
+
+.view-order-toast.show { 
+    display: block; 
+}
+
+.view-order-btn {
+  height: 54px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid #b10000;
+  background: #e60000;
+  color: #fff;
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: .2px;
+  cursor: pointer;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35), 0 18px 50px rgba(0,0,0,.22);
+  animation: toastPop .18s ease-out;
+}
+
+.view-order-btn:hover { transform: translateY(-1px) scale(1.01); }
+.view-order-btn:active { transform: translateY(0) scale(.99); }
+
+@keyframes toastPop {
+  from { transform: translateY(-6px) scale(.98); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@media (min-width: 1024px) {
+  #carrito {
+    --cart-scale: 1.25;
+    font-size: calc(1rem * var(--cart-scale));
+  }
+  
+}
+
+@media (min-width: 1024px) {
+  #carrito { zoom: 1.25; }
+}
+
+#btnFilterNew {
+  font-weight: 800;
+  font-size:medium;
+  border-width: 3px;
+  border-color: #e60000;
+}

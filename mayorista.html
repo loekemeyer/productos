@@ -13,8 +13,10 @@
   <body>
     <header class="header">
       <div class="logo">
-        <img src="img/logo.png" alt="Loekemeyer" class="logo-img">
-      </div>
+  <a href="/">
+    <img src="img/logo.png" alt="Loekemeyer" class="logo-img">
+  </a>
+</div>
 
       <div class="header-center" id="headerCenter"></div>
 
@@ -90,9 +92,9 @@
       Mi perfil
     </button>
 
-    <button id="menuChangePass" class="user-menu-item" type="button" onclick="openChangePassword()">
-      Cambiar contraseña
-    </button>
+    <button id="menuChangePass" type="button" class="user-menu-item">
+  Cambiar contraseña
+</button>
 
     <div class="user-menu-sep" role="separator" aria-hidden="true"></div>
 
@@ -111,9 +113,10 @@
       <button class="user-menu-item" type="button" onclick="openProfile(); closeMobileUserMenu();">
         Mi perfil
       </button>
-      <button class="user-menu-item" type="button" onclick="openChangePassword(); closeMobileUserMenu();">
-        Cambiar contraseña
-      </button>
+      <button id="menuChangePass" class="user-menu-item" type="button">
+  Cambiar contraseña
+</button>
+      
       <div class="user-menu-sep" role="separator" aria-hidden="true"></div>
       <button class="user-menu-item danger" type="button" onclick="logout(); closeMobileUserMenu();">
         Cerrar sesión
@@ -138,6 +141,8 @@
           <div class="sort-row">
             <!-- DESKTOP: BOTONES -->
             <div id="desktopSortButtons" class="desktop-sort-buttons" aria-label="Ordenar por">
+              <button type="button" id="btnFilterNew" class="ds-btn ds-filter">Nuevos
+              </button>
               <button type="button" class="ds-btn" data-sort="category">Categorías</button>
               <button type="button" class="ds-btn" data-sort="bestsellers">Más vendidos</button>
               <button type="button" class="ds-btn" data-sort="price_desc">Mayor a menor precio</button>
@@ -219,6 +224,28 @@
 
 </div>
 
+  <!-- ================= Sucursales ================= -->
+<div class="profile-card wide">
+
+  <div class="profile-card-title">Sucursales</div>
+
+  <div id="myAddressesBox" class="profile-box">
+    Cargando…
+  </div>
+
+  <div class="profile-card-actions">
+    <a 
+      href="https://wa.me/5491131181021?text=Quiero%20agregar%20una%20sucursal" 
+      target="_blank"
+      rel="noopener"
+    >
+      <button type="button" class="profile-btn">
+        Agregar Sucursal
+      </button>
+    </a>
+  </div>
+
+</div>
 
   <!-- Historial de pedidos -->
   <div class="profile-card wide">
@@ -230,22 +257,13 @@
     </div>
   </div>
 
-  <!-- Sucursales -->
-  <div class="profile-card wide">
-    <div class="profile-card-title">Sucursales</div>
-    <div id="myAddressesBox" class="profile-box">Cargando…</div>
+<!-- ================= Historial de Compras ================= -->
+<div class="profile-card wide profile-coming">
 
-    <div class="profile-card-actions">
-      <button type="button" class="profile-btn" id="btnAddAddress">Agregar Sucursal</button>
-    </div>
+  <div class="profile-card-title">
+    Historial de Compras (últimos 5 años)
+    <span class="coming-badge">Próximamente</span>
   </div>
-
-    <!-- Historial de Compras (futuro desarrollo) -->
-    <div class="profile-card wide profile-coming">
-      <div class="profile-card-title">
-      Historial de Compras (últimos 5 años)
-      <span class="coming-badge">Próximamente</span>
-    </div>
 
   <div class="coming-content">
     <div class="coming-icon">📊</div>
@@ -255,14 +273,22 @@
       evolución de precios y consumo por producto.
     </div>
   </div>
-    </div>
+
+</div>
 
 
 
   <!-- Botón rojo centrado antes del footer -->
   <div class="profile-bottom">
-    <button type="button" class="profile-btn danger big" id="btnReportError">Avisar de un error</button>
-  </div>
+  <a 
+    href="https://wa.me/5491131181021?text=Hay%20un%20error%20en%20la%20Web" 
+    target="_blank"
+  >
+    <button type="button" class="profile-btn danger big">
+      Avisar de un error
+    </button>
+  </a>
+</div>
 
   <!-- Modal contraseña (ÚNICO) -->
   <div id="passModal" class="modal hidden" aria-hidden="true">
@@ -272,7 +298,7 @@
       <div class="modal-title" id="passModalTitle">Modificar contraseña</div>
 
       <div class="profile-form">
-        <input id="newPass1" type="password" placeholder="Nueva contraseña" />
+        <input id="newPass1" type="password" autocomplete="new-password" placeholder="Nueva contraseña" />
         <input id="newPass2" type="password" placeholder="Repetir nueva contraseña" />
         <button type="button" class="profile-btn" id="btnChangePass">Guardar contraseña</button>
       </div>
@@ -439,7 +465,9 @@
           <label>Contraseña</label>
           <input id="passInput" type="password" placeholder="Contraseña">
 
-          <div class="modal-error" id="loginError" style="display:none;"></div>
+          <div class="modal-error" id="loginError" style="display:none;">
+
+          </div>
 
           <button class="modal-submit" onclick="login()">Ingresar</button>
 
@@ -456,11 +484,21 @@
           </a>
         </div>
       </div> 
-
+      </div>
+      
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <!-- Tu JS -->
     <script src="script.js"></script>
+
+    <!-- Toast "Ver pedido" -->
+    <div id="viewOrderToast" class="view-order-toast" aria-hidden="true">
+      <button id="viewOrderBtn" type="button" class="view-order-btn">
+        Ver pedido
+      </button>
+    </div>
+
   </body>
+
 </html>
- 
