@@ -1,11 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Historial de Compras</title>
 
-  <link rel="stylesheet" href="./historial.css" />
+  <link rel="stylesheet" href="./historial.css">
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -13,48 +13,66 @@
 </head>
 
 <body>
-  <header class="topbar">
-    <button type="button" class="back" id="btnBack">← Volver</button>
 
-    <div class="titlewrap">
+  <header class="topbar">
+
+    <button class="back-btn" onclick="volverMayorista()">
+      ← Volver
+    </button>
+
+    <div class="header-center">
       <div class="title">Historial de Compras</div>
-      <div class="subtitle" id="clienteInfo"></div>
+      <div id="clienteInfo" class="cliente-info"></div>
     </div>
 
-    <button type="button" class="btn" id="btnRecargar">Recargar</button>
+    <button class="reload-btn" onclick="recargarVista()">
+      Recargar
+    </button>
+
   </header>
 
   <main class="container">
+
+    <!-- TABS -->
     <div class="tabs">
-      <button type="button" class="tab active" id="tabHist" data-tab="hist">Historial</button>
-      <button type="button" class="tab" id="tabSug" data-tab="sug">Sugerencias x IA</button>
-      <button type="button" class="tab" id="tabNov" data-tab="nov">Novedades sugeridas</button>
+      <button id="tabHist" class="tab active" onclick="cambiarVista('hist')">
+        Historial
+      </button>
+
+      <button id="tabSug" class="tab" onclick="cambiarVista('sug')">
+        Sugerencias x IA
+      </button>
+
+      <button id="tabNov" class="tab" onclick="cambiarVista('nov')">
+        Novedades Sugeridas
+      </button>
     </div>
 
-    <section class="card">
-      <div id="estado" class="status">Listo.</div>
+    <!-- ESTADO -->
+    <div id="estado" class="estado"></div>
 
-      <!-- HIST -->
-      <div id="modHist"></div>
+    <!-- HISTORIAL -->
+    <div id="modHist"></div>
 
-      <!-- SUG -->
-      <div id="modSug" class="hidden">
-        <div class="row">
-          <div class="muted">Sugerencias (se muestran de a 5)</div>
-          <button type="button" class="btn subtle" id="btnMasSug">Ver más</button>
-        </div>
-        <div id="tablaSug"></div>
+    <!-- SUGERENCIAS -->
+    <div id="modSug" class="hidden">
+      <div class="row">
+        <span>Sugerencias (se muestran de a 5)</span>
+        <button onclick="verMasSug()">Ver más</button>
       </div>
+      <div id="tablaSug"></div>
+    </div>
 
-      <!-- NOV -->
-      <div id="modNov" class="hidden">
-        <div class="row">
-          <div class="muted">Novedades (se muestran de a 5)</div>
-          <button type="button" class="btn subtle" id="btnMasNov">Ver más</button>
-        </div>
-        <div id="tablaNov"></div>
+    <!-- NOVEDADES -->
+    <div id="modNov" class="hidden">
+      <div class="row">
+        <span>Novedades (se muestran de a 5)</span>
+        <button onclick="verMasNov()">Ver más</button>
       </div>
-    </section>
+      <div id="tablaNov"></div>
+    </div>
+
   </main>
+
 </body>
 </html>
