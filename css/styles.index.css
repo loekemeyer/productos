@@ -503,7 +503,7 @@ footer{
 .clientes-track{
   display: flex;
   align-items: center;
-  gap: 56px;
+  gap: 72px;
   width: max-content;
   padding: 10px 0;
   animation: clientesLoop 32s linear infinite;
@@ -517,7 +517,7 @@ footer{
 
 /* B/N + hover visible sin color */
 .clientes-track img{
-  height: 54px;
+  height: 81px;   /* 50% más grande */
   object-fit: contain;
   opacity: .72;
   filter: grayscale(100%) contrast(1.1);
@@ -534,6 +534,7 @@ footer{
 .clientes-carousel:hover .clientes-track{
   animation-play-state: paused;
 }
+
 
 
 
