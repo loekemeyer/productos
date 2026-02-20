@@ -977,12 +977,94 @@ body {
     padding-bottom: 120px;
 }
 /* ================= FOOTER ================= */
-.footer {
-    background: #111;
-    color: white;
-    text-align: center;
-    padding: 30px;
+.footer-bottom{
+  margin-top: 35px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,.1);
+  font-size: 13px;
+  color: #aaa;
 }
+
+.footer-bottom-row{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-links{
+  display:flex;
+  gap: 14px;
+}
+
+.footer-link{
+  color:#ddd;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,.25);
+  padding-bottom: 2px;
+}
+
+.footer-link:hover{
+  color:#fff;
+  border-bottom-color: rgba(255,255,255,.55);
+}
+
+/* ===== Modal ===== */
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 99999;
+}
+
+.modal-backdrop.open{
+  display: flex;
+}
+
+.modal{
+  width: min(720px, 100%);
+  background: #212122;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  padding: 22px 22px 18px;
+  position: relative;
+}
+
+.modal h3{
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.modal-content{
+  color: #ddd;
+  font-size: 14px;
+  line-height: 1.55;
+  max-height: min(60vh, 520px);
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.modal-close{
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+  color: #fff;
+  cursor: pointer;
+}
+.modal-close:hover{ background: rgba(255,255,255,.12); }
+
 /* ================= MODAL LOGIN ================= */
 .modal {
     position: fixed;
@@ -3133,4 +3215,5 @@ body {
 
 .profile-pass-wrap{
   margin-top:22px;
+
 }
