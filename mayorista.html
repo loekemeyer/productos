@@ -90,9 +90,17 @@
   <div class="user-menu" id="userMenu" aria-hidden="true">
     <button id="menuMyOrders" class="user-menu-item" type="button" onclick="openProfile()">
       Mi perfil
-    </button>
+    <button class="user-menu-item" type="button" onclick="openHistorialFromMenu('hist')">
+  Historial de Compras
+</button>
+<button class="user-menu-item" type="button" onclick="openHistorialFromMenu('sug')">
+  Sugerencia Compra x IA
+</button>
+<button class="user-menu-item" type="button" onclick="openHistorialFromMenu('nov')">
+  Novedades Sugeridas
+</button>
 
-    <button id="menuChangePass" type="button" class="user-menu-item">
+<div class="user-menu-sep" role="separator" aria-hidden="true"></div>
   Cambiar contraseña
 </button>
 
@@ -496,3 +504,4 @@
 
 
 </html>
+
