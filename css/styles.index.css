@@ -78,17 +78,40 @@ img{max-width:100%;display:block}
 /* Sobre nosotros */
 .about{
   display: flex;
-  justify-content: center;
-  text-align: center;
+  align-items: center;
+  gap: 60px;
+}
+
+.about .img{
+  flex: 1;
+}
+
+.about .img img{
+  width: 100%;
+  border-radius: 16px;
+  display: block;
 }
 
 .about-text{
-  max-width: 780px;
+  flex: 1;
 }
 
-.about h2{font-size:38px;margin-bottom:20px}
-.about p{font-size:16px;line-height:1.8;color:#333}
-.about .img img{border-radius:16px;box-shadow:var(--shadow)}
+.about-text h2{
+  margin-bottom: 20px;
+}
+
+.about-text p{
+  margin-bottom: 16px;
+  line-height: 1.7;
+  color: #444;
+}
+
+@media (max-width: 900px){
+  .about{
+    flex-direction: column;
+    text-align: center;
+  }
+}
 
 /* Destacados */
 
@@ -625,6 +648,7 @@ footer{
 .clientes-carousel:hover .clientes-track{
   animation-play-state: paused;
 }
+
 
 
 
