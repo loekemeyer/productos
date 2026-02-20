@@ -55,3 +55,59 @@ function initClientesBounce() {
 }
 
 document.addEventListener("DOMContentLoaded", initClientesBounce);
+
+
+function initLegalModals(){
+  const modal = document.getElementById("legalModal");
+  if (!modal) return;
+
+  const titleEl = document.getElementById("legalTitle");
+  const contentEl = document.getElementById("legalContent");
+  const closeBtn = modal.querySelector(".modal-close");
+
+  const CONTENT = {
+    privacy: {
+      title: "Política de privacidad",
+      html: "<p>test</p>"
+    },
+    terms: {
+      title: "Términos y condiciones",
+      html: "<p>test</p>"
+    }
+  };
+
+  function openModal(key){
+    const data = CONTENT[key];
+    if (!data) return;
+
+    titleEl.textContent = data.title;
+    contentEl.innerHTML = data.html;
+
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal(){
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".footer-link[data-modal]").forEach(a => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      openModal(a.dataset.modal);
+    });
+  });
+
+  closeBtn?.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initLegalModals);
