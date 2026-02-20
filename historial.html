@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Historial de compras</title>
+
+  <!-- Supabase (UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+  <style>
+    *{box-sizing:border-box}
+    body{
+      font-family: Arial, system-ui;
+      background:#f4f4f4;
+      padding:24px;
+      margin:0;
+    }
+
+    .box{
+      background:#fff;
+      padding:18px;
+      border-radius:12px;
+      max-width:1200px;
+      margin:auto;
+      border:1px solid #e6e6e6;
+    }
+
+    h2{margin:0 0 12px}
+
+    .top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .switch{display:flex;gap:6px}
+
+    .tab{
+      padding:8px 14px;
+      border-radius:10px;
+      border:1px solid #ccc;
+      background:#eee;
+      color:#333;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .tab.active{
+      background:#111;
+      color:#fff;
+      border-color:#111;
+    }
+
+    .controls{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    input{
+      padding:8px;
+      width:140px;
+      border:1px solid #ccc;
+      border-radius:8px;
+    }
+
+    button{
+      padding:8px 12px;
+      border-radius:8px;
+      border:1px solid #ccc;
+      background:#111;
+      color:#fff;
+      cursor:pointer;
+    }
+
+    .hidden{display:none}
+
+    .tableWrap{
+      margin-top:12px;
+      border:1px solid #ddd;
+      border-radius:10px;
+      overflow:auto;
+      max-height:70vh;
+      background:#fff;
+    }
+
+    table{
+      border-collapse:collapse;
+      table-layout:fixed; /* evita que se estire al pedo */
+    }
+
+    /* Historial: puede ser ancho por meses */
+    #tablaHist{
+      width:max-content;
+      min-width:100%;
+      table-layout:auto;
+    }
+
+    /* Sugerencias y Novedades: compactas */
+    #tablaSug, #tablaNov{
+      width:100%;
+      min-width:0;
+      table-layout:fixed;
+    }
+
+    th,td{
+      padding:6px 8px;
+      border-bottom:1px solid #eee;
+      font-size:13px;
+      white-space:nowrap;
+      vertical-align:middle;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    thead th{
+      background:#111;
+      color:#fff;
+      position:sticky;
+      top:0;
+      z-index:2;
+    }
+
+    /* widths (compactas) */
+    .col-cod{width:70px; text-align:center}
+
+    /* ✅ clave: hacemos Descripción más angosta para acercar “Foto” */
+    .col-desc{
+      width:240px;      /* antes 320 */
+      text-align:left;
+    }
+
+    /* ✅ Foto más cerca y más chica */
+    .col-img{width:60px; text-align:center}
+
+    /* mantenemos relación con Foto (como pediste) */
+    .col-uxb{width:70px; text-align:center}
+    .col-price{width:150px; text-align:center}
+
+    /* Mensaje del % (Sugerencias) */
+    .col-msg{
+      width:320px;
+      text-align:left;
+      white-space:normal;
+      line-height:1.2;
+    }
+
+    .thumb{
+      height:28px;   /* antes 34 */
+      width:28px;    /* antes 34 */
+      object-fit:cover;
+      border-radius:6px;
+      border:1px solid #ddd;
+      display:inline-block;
+      background:#fafafa;
+    }
+
+    .moreWrap{
+      display:flex;
+      justify-content:center;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .muted{
+      color:#666;
+      font-size:12px;
+      margin-top:8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+
+    <h2>Historial de compras</h2>
+
+    <div class="top">
+      <div class="switch">
+        <button id="tabHist" class="tab active" onclick="mostrar('hist')">Historial</button>
+        <button id="tabSug" class="tab" onclick="mostrar('sug')">Sugerencias</button>
+        <button id="tabNov" class="tab" onclick="mostrar('nov')">Novedades</button>
+      </div>
+
+      <div class="controls">
+        Código cliente:
+        <input id="cliente" value="1329" />
+        <button onclick="cargar()">Cargar</button>
+      </div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div id="modHist">
+      <div class="tableWrap">
+        <table id="tablaHist">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="muted">Filas = artículos (ordenados por Total). Columnas = meses donde hubo compra.</div>
+    </div>
+
+    <!-- SUGERENCIAS -->
+    <div id="modSug" class="hidden">
+      <div class="tableWrap">
+        <table id="tablaSug">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="moreWrap">
+        <button id="btnMoreSug" class="hidden" onclick="verMasSug()">Ver más</button>
+        <button id="btnLessSug" class="hidden" onclick="verMenosSug()">Ver menos</button>
+      </div>
+    </div>
+
+    <!-- NOVEDADES -->
+    <div id="modNov" class="hidden">
+      <div class="tableWrap">
+        <table id="tablaNov">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="moreWrap">
+        <button id="btnMoreNov" class="hidden" onclick="verMasNov()">Ver más</button>
+        <button id="btnLessNov" class="hidden" onclick="verMenosNov()">Ver menos</button>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
