@@ -451,6 +451,37 @@ footer{
   box-shadow: 0 12px 30px rgba(139,30,30,.5);
 }
 
+
+/* ================= REDES SOCIALES ================= */
+
+.social-section{
+  padding: 80px 0;
+  background: #fff;
+}
+
+.social-subtitle{
+  margin-top: -8px;
+  margin-bottom: 22px;
+  color: #555;
+  font-size: 14px;
+}
+
+/* Marco del widget para que quede “corporativo” */
+.ig-widget-wrap{
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid #e9e9e9;
+  box-shadow: 0 12px 30px rgba(0,0,0,.10);
+  background: #fafafa;
+  padding: 10px; /* deja aire si el widget pega al borde */
+}
+
+/* Opcional: si Elfsight mete fondo/blancos raros */
+.ig-widget-wrap > div{
+  border-radius: 14px;
+  overflow: hidden;
+}
+
 /* ================= CLIENTES ================= */
 
 .clientes-section{
@@ -505,6 +536,7 @@ footer{
 .clientes-bounce:hover .clientes-track{
   animation-play-state: paused;
 }
+
 
 
 
