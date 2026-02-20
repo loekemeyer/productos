@@ -77,11 +77,15 @@ img{max-width:100%;display:block}
 
 /* Sobre nosotros */
 .about{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:50px;
-  align-items:center;
+  display: flex;
+  justify-content: center;
+  text-align: center;
 }
+
+.about-text{
+  max-width: 780px;
+}
+
 .about h2{font-size:38px;margin-bottom:20px}
 .about p{font-size:16px;line-height:1.8;color:#333}
 .about .img img{border-radius:16px;box-shadow:var(--shadow)}
@@ -621,6 +625,7 @@ footer{
 .clientes-carousel:hover .clientes-track{
   animation-play-state: paused;
 }
+
 
 
 
