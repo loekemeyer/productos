@@ -2617,3 +2617,45 @@ function openHistorialFromMenu(v){
   }
   window.location.href = `./historial.html?c=${encodeURIComponent(c)}&v=${encodeURIComponent(v)}`;
 }
+
+// ====== HISTORIAL / SUGERENCIAS / NOVEDADES DESDE EL MENÚ ======
+
+function getCodClienteFromProfileOrStorage() {
+  // 1) Si ya está pintado en el perfil:
+  const dom = (document.getElementById("pfCodCliente")?.textContent || "").trim();
+  if (dom && dom !== "—") return dom;
+
+  // 2) Si lo guardaste en storage (probamos varias keys típicas)
+  const ls =
+    localStorage.getItem("cod_cliente") ||
+    localStorage.getItem("codCliente") ||
+    localStorage.getItem("cliente") ||
+    localStorage.getItem("customer") ||
+    localStorage.getItem("customer_id") ||
+    "";
+
+  return (ls || "").trim();
+}
+
+function abrirHistorial(vista) {
+  // intento 1: directo
+  let cod = getCodClienteFromProfileOrStorage();
+  if (cod) {
+    window.location.href = `./historial.html?c=${encodeURIComponent(cod)}&v=${encodeURIComponent(vista)}`;
+    return;
+  }
+
+  // intento 2: abro "Mi perfil" para forzar a que se cargue pfCodCliente
+  if (typeof openProfile === "function") openProfile();
+
+  setTimeout(() => {
+    cod = getCodClienteFromProfileOrStorage();
+
+    if (!cod) {
+      alert("No pude detectar el Código de Cliente. Abrí 'Mi perfil' y probá de nuevo.");
+      return;
+    }
+
+    window.location.href = `./historial.html?c=${encodeURIComponent(cod)}&v=${encodeURIComponent(vista)}`;
+  }, 250);
+}
