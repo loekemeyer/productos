@@ -1,42 +1,60 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Historial de Compras</title>
 
-  <link rel="stylesheet" href="./historial.css">
+  <link rel="stylesheet" href="./historial.css" />
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script defer src="./historial.js"></script>
 </head>
+
 <body>
+  <header class="topbar">
+    <button type="button" class="back" id="btnBack">← Volver</button>
 
-  <div class="container">
-
-    <div class="header">
-      <h1>Historial de Compras</h1>
-      <button onclick="window.location.href='mayorista.html'">Volver</button>
+    <div class="titlewrap">
+      <div class="title">Historial de Compras</div>
+      <div class="subtitle" id="clienteInfo"></div>
     </div>
 
-    <div class="cliente-info" id="clienteInfo"></div>
+    <button type="button" class="btn" id="btnRecargar">Recargar</button>
+  </header>
 
+  <main class="container">
     <div class="tabs">
-      <button onclick="mostrar('hist')" id="tabHist" class="active">
-        Historial
-      </button>
-      <button onclick="mostrar('sug')" id="tabSug">
-        Sugerencias
-      </button>
-      <button onclick="mostrar('nov')" id="tabNov">
-        Novedades
-      </button>
+      <button type="button" class="tab active" id="tabHist" data-tab="hist">Historial</button>
+      <button type="button" class="tab" id="tabSug" data-tab="sug">Sugerencias x IA</button>
+      <button type="button" class="tab" id="tabNov" data-tab="nov">Novedades sugeridas</button>
     </div>
 
-    <div id="contenido"></div>
+    <section class="card">
+      <div id="estado" class="status">Listo.</div>
 
-  </div>
+      <!-- HIST -->
+      <div id="modHist"></div>
 
+      <!-- SUG -->
+      <div id="modSug" class="hidden">
+        <div class="row">
+          <div class="muted">Sugerencias (se muestran de a 5)</div>
+          <button type="button" class="btn subtle" id="btnMasSug">Ver más</button>
+        </div>
+        <div id="tablaSug"></div>
+      </div>
+
+      <!-- NOV -->
+      <div id="modNov" class="hidden">
+        <div class="row">
+          <div class="muted">Novedades (se muestran de a 5)</div>
+          <button type="button" class="btn subtle" id="btnMasNov">Ver más</button>
+        </div>
+        <div id="tablaNov"></div>
+      </div>
+    </section>
+  </main>
 </body>
 </html>
