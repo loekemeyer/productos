@@ -2594,3 +2594,26 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = `./historial.html?c=${cod}`;
   });
 });
+
+
+function getCodClienteForHistorial(){
+  const dom = document.getElementById("pfCodCliente")?.textContent?.trim();
+  const ls =
+    localStorage.getItem("cod_cliente") ||
+    localStorage.getItem("codCliente") ||
+    localStorage.getItem("cliente") ||
+    localStorage.getItem("customer") ||
+    localStorage.getItem("customer_id") ||
+    "";
+
+  return (dom || ls || "").trim();
+}
+
+function openHistorialFromMenu(v){
+  const c = getCodClienteForHistorial();
+  if(!c){
+    alert("No se detectó el Cod Cliente del usuario logueado.");
+    return;
+  }
+  window.location.href = `./historial.html?c=${encodeURIComponent(c)}&v=${encodeURIComponent(v)}`;
+}
