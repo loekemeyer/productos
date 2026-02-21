@@ -78,12 +78,14 @@ async function loadCustomerProfileByAuth(authUserId) {
   return data;
 }
 
-async function loadOrders(customerId) {
+async function loadOrders(customerCode) {
+  const cod = String(customerCode || "").trim();
+
   const { data, error } = await supabaseClient
-    .from('orders')
-    .select('id, created_at, total')
-    .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+    .from('sales_lines')
+    .select('invoice_date, customer_code, item_code, boxes')
+    .eq('customer_code', cod)
+    .order('invoice_date', { ascending: false });
 
   if (error) throw error;
   return data || [];
@@ -169,4 +171,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     showError('Error al cargar el historial. Revisá RLS/permiso en orders y order_items.');
   }
 });
+
 
