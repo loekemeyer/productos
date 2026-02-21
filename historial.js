@@ -157,19 +157,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       line.textContent = `Cliente: ${name || '—'}${cod ? ` (Cod ${cod})` : ''}`;
     }
 
-    const orders = await loadOrders(profile.id);
-    const orderIds = orders.map(o => o.id);
+const cod = String(profile.cod_cliente || "").trim();
 
-    const items = await loadItemsByOrderIds(orderIds);
-    
-    console.log("ORDERS:", orders);
-    console.log("PROFILE ID:", profile.id);
-    render(orders, items);
+const lines = await loadOrders(cod);
+
+renderSalesLines(lines);
   } catch (err) {
     console.error(err);
     showTable(false);
     showError('Error al cargar el historial. Revisá RLS/permiso en orders y order_items.');
   }
 });
+
 
 
