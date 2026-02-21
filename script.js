@@ -265,9 +265,12 @@ async function login() {
     return;
   }
 
-  currentSession = data.session || null;
+currentSession = data.session || null;
 
-  closeLogin();
+// ✅ marca que hubo login
+localStorage.setItem("is_logged", "1");
+
+closeLogin();
 
   // limpiar búsqueda
   searchTerm = '';
@@ -307,6 +310,7 @@ async function logout() {
     isAdmin = false;
     customerProfile = null;
     deliveryChoice = { slot: '', label: '' };
+    localStorage.removeItem("is_logged");
 
     if ($('customerNote')) $('customerNote').innerText = '';
     if ($('helloNavText')) $('helloNavText').innerText = '';
@@ -2684,3 +2688,4 @@ function abrirHistorial(vista) {
     }
   }, 100);
 }
+
