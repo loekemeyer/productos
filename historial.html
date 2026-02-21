@@ -1,51 +1,114 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Historial de Compras</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// ================= SUPABASE =================
+const SUPABASE_URL = "https://kwkclwhmoygunqmlegrg.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_mVX5MnjwM770cNjgiL6yLw_LDNl9pML";
 
-  <!-- mismos estilos que mayorista -->
-  <link rel="stylesheet" href="./css/styles.css">
-  <link rel="stylesheet" href="./css/styles.index.css">
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+// helpers
+const $ = (id) => document.getElementById(id);
 
-<body>
+function setStatus(txt) {
+  $("statusBox").textContent = txt;
+}
 
-  <div class="container" style="max-width:1100px;margin:auto;padding:40px 20px;">
+function showError(msg) {
+  const el = $("errorBox");
+  el.style.display = "block";
+  el.textContent = msg;
+}
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <div>
-        <h1 style="margin:0;">Historial de Compras</h1>
-        <div id="histClientLine" style="opacity:.7;margin-top:4px;"></div>
-      </div>
+function showTable(show) {
+  $("histTable").style.display = show ? "table" : "none";
+}
 
-      <button class="btn" onclick="volverInicio()">← Volver</button>
-    </div>
+function volverInicio() {
+  window.location.href = "./mayorista.html";
+}
 
-    <div id="statusBox" class="card" style="padding:14px;margin-bottom:10px;">
-      Cargando...
-    </div>
+// ================= LOGIN REQUIRED =================
+async function requireLogin() {
+  const { data } = await supabaseClient.auth.getSession();
 
-    <div id="errorBox" class="card" style="display:none;background:#ffe5e5;color:#b00000;padding:14px;margin-bottom:10px;"></div>
+  if (!data.session) {
+    window.location.href = "./mayorista.html";
+    return null;
+  }
 
-    <table id="histTable" class="table" style="display:none;width:100%;">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Código Art.</th>
-          <th>Cajas</th>
-        </tr>
-      </thead>
-      <tbody id="histTbody"></tbody>
-    </table>
+  return data.session;
+}
 
-  </div>
+// ================= PERFIL =================
+async function loadCustomerProfileByAuth(userId) {
+  const { data, error } = await supabaseClient
+    .from("customers")
+    .select("id, cod_cliente, business_name")
+    .eq("auth_user_id", userId)
+    .maybeSingle();
 
-  <script src="./historial.js"></script>
+  if (error) throw error;
+  if (!data) throw new Error("No se encontró el perfil del cliente.");
 
-</body>
-</html>
+  return data;
+}
+
+// ================= HISTORIAL =================
+async function loadOrders(customerCode) {
+  const cod = String(customerCode || "").trim();
+
+  const { data, error } = await supabaseClient
+    .from("sales_lines")
+    .select("invoice_date, customer_code, item_code, boxes")
+    .eq("customer_code", cod)
+    .order("invoice_date", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+// ================= RENDER =================
+function render(lines) {
+  const tbody = $("histTbody");
+
+  if (!lines.length) {
+    setStatus("No hay compras registradas.");
+    showTable(false);
+    return;
+  }
+
+  setStatus("");
+  showTable(true);
+
+  tbody.innerHTML = lines.map(l => `
+    <tr>
+      <td>${l.invoice_date}</td>
+      <td>${l.item_code}</td>
+      <td>${l.boxes}</td>
+    </tr>
+  `).join("");
+}
+
+// ================= INIT =================
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    setStatus("Cargando...");
+
+    const session = await requireLogin();
+    if (!session) return;
+
+    const profile = await loadCustomerProfileByAuth(session.user.id);
+
+    const line = $("histClientLine");
+    if (line) {
+      line.textContent =
+        `Cliente: ${profile.business_name} (Cod ${profile.cod_cliente})`;
+    }
+
+    const lines = await loadOrders(profile.cod_cliente);
+    render(lines);
+
+  } catch (err) {
+    console.error(err);
+    showError("Error al cargar el historial.");
+    showTable(false);
+  }
+});
