@@ -1,78 +1,68 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Historial de Compras</title>
 
-  <link rel="stylesheet" href="./historial.css">
+  <!-- Reusá tu CSS general para que los botones y tipografía se vean igual -->
+  <link rel="stylesheet" href="./css/styles.css" />
+  <!-- (opcional) si querés mantener tu historial.css actual, dejalo también -->
+  <link rel="stylesheet" href="./historial.css" />
 
   <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script defer src="./historial.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <style>
+    /* Mini ajustes para que quede prolijo sin “cambiarte toda la web” */
+    .hist-wrap { max-width: 1100px; margin: 0 auto; padding: 18px; }
+    .hist-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+    .hist-title { font-size: 22px; font-weight: 800; margin:0; }
+    .hist-sub { color:#666; font-size:13px; margin-top:4px; }
+    .hist-card { background:#fff; border:1px solid #eee; border-radius:14px; padding:14px; }
+    .hist-table { width:100%; border-collapse:collapse; }
+    .hist-table th, .hist-table td { padding:10px; border-bottom:1px solid #eee; text-align:left; font-size:14px; }
+    .hist-table th { font-weight:800; color:#111; background:#fafafa; }
+    .muted { color:#666; }
+    .errbox { background:#fff3f3; border:1px solid #ffd0d0; color:#8a1f1f; padding:12px; border-radius:12px; }
+  </style>
 </head>
 
 <body>
-
-  <header class="topbar">
-
-    <button class="back-btn" onclick="volverMayorista()">
-      ← Volver
-    </button>
-
-    <div class="header-center">
-      <div class="title">Historial de Compras</div>
-      <div id="clienteInfo" class="cliente-info"></div>
-    </div>
-
-    <button class="reload-btn" onclick="recargarVista()">
-      Recargar
-    </button>
-
-  </header>
-
-  <main class="container">
-
-    <!-- TABS -->
-    <div class="tabs">
-      <button id="tabHist" class="tab active" onclick="cambiarVista('hist')">
-        Historial
-      </button>
-
-      <button id="tabSug" class="tab" onclick="cambiarVista('sug')">
-        Sugerencias x IA
-      </button>
-
-      <button id="tabNov" class="tab" onclick="cambiarVista('nov')">
-        Novedades Sugeridas
-      </button>
-    </div>
-
-    <!-- ESTADO -->
-    <div id="estado" class="estado"></div>
-
-    <!-- HISTORIAL -->
-    <div id="modHist"></div>
-
-    <!-- SUGERENCIAS -->
-    <div id="modSug" class="hidden">
-      <div class="row">
-        <span>Sugerencias (se muestran de a 5)</span>
-        <button onclick="verMasSug()">Ver más</button>
+  <div class="hist-wrap">
+    <div class="hist-head">
+      <div>
+        <h1 class="hist-title">Historial de Compras</h1>
+        <div class="hist-sub" id="histClientLine">Cliente: —</div>
       </div>
-      <div id="tablaSug"></div>
+
+      <!-- Botón igual “estilo sistema”: usa clases existentes si ya las tenés -->
+      <button class="profile-btn" type="button" onclick="volverMayorista()">
+        ← Volver
+      </button>
     </div>
 
-    <!-- NOVEDADES -->
-    <div id="modNov" class="hidden">
-      <div class="row">
-        <span>Novedades (se muestran de a 5)</span>
-        <button onclick="verMasNov()">Ver más</button>
+    <div class="hist-card">
+      <div id="histStatus" class="muted">Cargando…</div>
+
+      <div id="histError" class="errbox" style="display:none;"></div>
+
+      <div id="histTableWrap" style="display:none;">
+        <table class="hist-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>N° Pedido</th>
+              <th>Total</th>
+              <th>Items</th>
+            </tr>
+          </thead>
+          <tbody id="histTbody"></tbody>
+        </table>
       </div>
-      <div id="tablaNov"></div>
     </div>
+  </div>
 
-  </main>
-
+  <script defer src="./historial.js"></script>
 </body>
 </html>
