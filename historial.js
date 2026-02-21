@@ -1,163 +1,145 @@
-'use strict';
+// =========================
+// SUPABASE
+// =========================
 
-/***********************
- * SUPABASE CONFIG (igual que tu script.js)
- ***********************/
-const SUPABASE_URL = 'https://kwkclwhmoygunqmlegrg.supabase.co';
+const SUPABASE_URL = "https://kwkclwhmoygunqmlegrg.supabase.co";
+
 const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3a2Nsd2htb3lndW5xbWxlZ3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MjA2NzUsImV4cCI6MjA4NTA5NjY3NX0.soqPY5hfA3RkAJ9jmIms8UtEGUc4WpZztpEbmDijOgU';
+  "sb_publishable_mVX5MnjwM770cNjgiL6yLw_LDNl9pML";
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
-function $(id) { return document.getElementById(id); }
+// =========================
+// HELPERS
+// =========================
 
-function formatMoney(n) {
-  return Math.round(Number(n || 0)).toLocaleString('es-AR');
-}
+const $ = (id) => document.getElementById(id);
 
-function formatDate(d) {
-  try {
-    return new Date(d).toLocaleDateString('es-AR');
-  } catch {
-    return String(d || '');
-  }
+function setStatus(txt) {
+  const el = $("status");
+  if (el) el.textContent = txt;
 }
 
 function showError(msg) {
-  const e = $('histError');
-  const s = $('histStatus');
-  if (s) s.style.display = 'none';
-  if (e) {
-    e.style.display = 'block';
-    e.textContent = msg || 'Error';
+  const el = $("errorBox");
+  if (el) {
+    el.style.display = "block";
+    el.textContent = msg;
   }
-}
-
-function setStatus(msg) {
-  const s = $('histStatus');
-  if (!s) return;
-  s.style.display = 'block';
-  s.textContent = msg || '';
 }
 
 function showTable(show) {
-  const w = $('histTableWrap');
-  if (w) w.style.display = show ? 'block' : 'none';
+  const t = $("histTable");
+  if (t) t.style.display = show ? "table" : "none";
 }
 
-function volverMayorista() {
-  // vuelve al módulo mayorista (misma carpeta)
-  window.location.href = './mayorista.html';
-}
-window.volverMayorista = volverMayorista;
+// =========================
+// LOGIN REQUIRED
+// =========================
 
 async function requireLogin() {
   const { data } = await supabaseClient.auth.getSession();
-  const session = data?.session || null;
-
-  if (!session) {
-    // No logueado => no mostramos nada
-    showTable(false);
-    showError('Tenés que iniciar sesión para ver el historial.');
-    // opcional: volver automático
-    // setTimeout(() => volverMayorista(), 800);
+  if (!data.session) {
+    window.location.href = "./mayorista.html";
     return null;
   }
-  return session;
+  return data.session;
 }
 
-async function loadCustomerProfileByAuth(authUserId) {
+// =========================
+// PERFIL CLIENTE
+// =========================
+
+async function loadCustomerProfileByAuth(userId) {
   const { data, error } = await supabaseClient
-    .from('customers')
-    .select('id,business_name,cod_cliente')
-    .eq('auth_user_id', authUserId)
+    .from("customers")
+    .select("id, cod_cliente, business_name")
+    .eq("auth_user_id", userId)
     .maybeSingle();
 
   if (error) throw error;
-  if (!data) throw new Error('No se encontró el perfil del cliente.');
+  if (!data) throw new Error("No se encontró el perfil del cliente.");
+
   return data;
 }
+
+// =========================
+// CARGA HISTORIAL (sales_lines)
+// =========================
 
 async function loadOrders(customerCode) {
   const cod = String(customerCode || "").trim();
 
   const { data, error } = await supabaseClient
-    .from('sales_lines')
-    .select('invoice_date, customer_code, item_code, boxes')
-    .eq('customer_code', cod)
-    .order('invoice_date', { ascending: false });
+    .from("sales_lines")
+    .select("invoice_date, customer_code, item_code, boxes")
+    .eq("customer_code", cod)
+    .order("invoice_date", { ascending: false });
 
   if (error) throw error;
   return data || [];
 }
 
-function render(orders, items) {
-  const tbody = $('histTbody');
+// =========================
+// RENDER
+// =========================
+
+function render(lines) {
+  const tbody = $("histTbody");
   if (!tbody) return;
 
-  const itemsByOrder = new Map();
-  for (const it of (items || [])) {
-    const k = String(it.order_id);
-    if (!itemsByOrder.has(k)) itemsByOrder.set(k, []);
-    itemsByOrder.get(k).push(it);
-  }
-
-  if (!orders.length) {
-    setStatus('No hay compras registradas.');
+  if (!lines.length) {
+    setStatus("No hay compras registradas.");
     showTable(false);
     return;
   }
 
-  tbody.innerHTML = orders.map(o => {
-    const oid = String(o.id);
-    const its = itemsByOrder.get(oid) || [];
-
-    const cantItems = its.length;
-    const cantCajas = its.reduce((acc, r) => acc + Number(r.cajas || 0), 0);
-
-    return `
-      <tr>
-        <td>${formatDate(o.created_at)}</td>
-        <td>${oid}</td>
-        <td><strong>$ ${formatMoney(o.total)} + IVA</strong></td>
-        <td>${cantItems} items · ${formatMoney(cantCajas)} cajas</td>
-      </tr>
-    `;
-  }).join('');
-
-  setStatus('');
   showTable(true);
+  setStatus("");
+
+  tbody.innerHTML = lines
+    .map((l) => {
+      return `
+      <tr>
+        <td>${l.invoice_date}</td>
+        <td>${l.item_code}</td>
+        <td>${l.boxes}</td>
+      </tr>
+      `;
+    })
+    .join("");
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+// =========================
+// INIT
+// =========================
+
+document.addEventListener("DOMContentLoaded", async () => {
   try {
-    setStatus('Cargando…');
+    setStatus("Cargando…");
 
     const session = await requireLogin();
     if (!session) return;
 
     const profile = await loadCustomerProfileByAuth(session.user.id);
 
-    const line = $('histClientLine');
+    const line = $("histClientLine");
     if (line) {
-      const name = String(profile.business_name || '').trim();
-      const cod = String(profile.cod_cliente || '').trim();
-      line.textContent = `Cliente: ${name || '—'}${cod ? ` (Cod ${cod})` : ''}`;
+      const name = String(profile.business_name || "").trim();
+      const cod = String(profile.cod_cliente || "").trim();
+      line.textContent = `Cliente: ${name} (Cod ${cod})`;
     }
 
-const cod = String(profile.cod_cliente || "").trim();
+    const cod = String(profile.cod_cliente || "").trim();
+    const lines = await loadOrders(cod);
 
-const lines = await loadOrders(cod);
-
-render(lines);
+    render(lines);
   } catch (err) {
     console.error(err);
+    showError("Error al cargar el historial.");
     showTable(false);
-    showError('Error al cargar el historial. Revisá RLS/permiso en orders y order_items.');
   }
 });
-
-
-
-
-
