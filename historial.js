@@ -1,3 +1,15 @@
+document.addEventListener("DOMContentLoaded", async () => {
+
+  const { data } = await supabaseClient.auth.getSession();
+  const session = data.session;
+
+  if (!session) {
+    // Si no hay sesión, volver al mayorista
+    window.location.href = "./mayorista.html";
+    return;
+  }
+
+});
 // BLOQUEO SI NO HAY SESIÓN
 if (!localStorage.getItem("is_logged")) {
   window.location.href = "index.html";
@@ -221,3 +233,4 @@ document.addEventListener("DOMContentLoaded", () => {
   // cargar automático al abrir
   cargarVista();
 });
+
