@@ -149,13 +149,14 @@ const cod = String(profile.cod_cliente || "").trim();
 
 const lines = await loadOrders(cod);
 
-renderSalesLines(lines);
+render(lines);
   } catch (err) {
     console.error(err);
     showTable(false);
     showError('Error al cargar el historial. Revisá RLS/permiso en orders y order_items.');
   }
 });
+
 
 
 
