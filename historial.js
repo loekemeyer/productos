@@ -1,236 +1,169 @@
-document.addEventListener("DOMContentLoaded", async () => {
+'use strict';
 
+/***********************
+ * SUPABASE CONFIG (igual que tu script.js)
+ ***********************/
+const SUPABASE_URL = 'https://kwkclwhmoygunqmlegrg.supabase.co';
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3a2Nsd2htb3lndW5xbWxlZ3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MjA2NzUsImV4cCI6MjA4NTA5NjY3NX0.soqPY5hfA3RkAJ9jmIms8UtEGUc4WpZztpEbmDijOgU';
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function $(id) { return document.getElementById(id); }
+
+function formatMoney(n) {
+  return Math.round(Number(n || 0)).toLocaleString('es-AR');
+}
+
+function formatDate(d) {
+  try {
+    return new Date(d).toLocaleDateString('es-AR');
+  } catch {
+    return String(d || '');
+  }
+}
+
+function showError(msg) {
+  const e = $('histError');
+  const s = $('histStatus');
+  if (s) s.style.display = 'none';
+  if (e) {
+    e.style.display = 'block';
+    e.textContent = msg || 'Error';
+  }
+}
+
+function setStatus(msg) {
+  const s = $('histStatus');
+  if (!s) return;
+  s.style.display = 'block';
+  s.textContent = msg || '';
+}
+
+function showTable(show) {
+  const w = $('histTableWrap');
+  if (w) w.style.display = show ? 'block' : 'none';
+}
+
+function volverMayorista() {
+  // vuelve al módulo mayorista (misma carpeta)
+  window.location.href = './mayorista.html';
+}
+window.volverMayorista = volverMayorista;
+
+async function requireLogin() {
   const { data } = await supabaseClient.auth.getSession();
-  const session = data.session;
+  const session = data?.session || null;
 
   if (!session) {
-    // Si no hay sesión, volver al mayorista
-    window.location.href = "./mayorista.html";
+    // No logueado => no mostramos nada
+    showTable(false);
+    showError('Tenés que iniciar sesión para ver el historial.');
+    // opcional: volver automático
+    // setTimeout(() => volverMayorista(), 800);
+    return null;
+  }
+  return session;
+}
+
+async function loadCustomerProfileByAuth(authUserId) {
+  const { data, error } = await supabaseClient
+    .from('customers')
+    .select('id,business_name,cod_cliente')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error('No se encontró el perfil del cliente.');
+  return data;
+}
+
+async function loadOrders(customerId) {
+  const { data, error } = await supabaseClient
+    .from('orders')
+    .select('id, created_at, total')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function loadItemsByOrderIds(orderIds) {
+  if (!orderIds.length) return [];
+
+  const { data, error } = await supabaseClient
+    .from('order_items')
+    .select('order_id, cajas, uxb')
+    .in('order_id', orderIds);
+
+  if (error) throw error;
+  return data || [];
+}
+
+function render(orders, items) {
+  const tbody = $('histTbody');
+  if (!tbody) return;
+
+  const itemsByOrder = new Map();
+  for (const it of (items || [])) {
+    const k = String(it.order_id);
+    if (!itemsByOrder.has(k)) itemsByOrder.set(k, []);
+    itemsByOrder.get(k).push(it);
+  }
+
+  if (!orders.length) {
+    setStatus('No hay compras registradas.');
+    showTable(false);
     return;
   }
 
-});
-// BLOQUEO SI NO HAY SESIÓN
-if (!localStorage.getItem("is_logged")) {
-  window.location.href = "index.html";
+  tbody.innerHTML = orders.map(o => {
+    const oid = String(o.id);
+    const its = itemsByOrder.get(oid) || [];
+
+    const cantItems = its.length;
+    const cantCajas = its.reduce((acc, r) => acc + Number(r.cajas || 0), 0);
+
+    return `
+      <tr>
+        <td>${formatDate(o.created_at)}</td>
+        <td>${oid}</td>
+        <td><strong>$ ${formatMoney(o.total)} + IVA</strong></td>
+        <td>${cantItems} items · ${formatMoney(cantCajas)} cajas</td>
+      </tr>
+    `;
+  }).join('');
+
+  setStatus('');
+  showTable(true);
 }
 
-// ====================== CONFIG ======================
-const SUPABASE_URL = "https://flgavcfamdsodrhakqen.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_G9QvEtPwGp80_6NUneseVg_V5mfmLfY";
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    setStatus('Cargando…');
 
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const session = await requireLogin();
+    if (!session) return;
 
-// ====================== STATE ======================
-let vista = "hist";
+    const profile = await loadCustomerProfileByAuth(session.user.id);
 
-let sugerenciasGlobal = [];
-let sugMostrados = 5;
-
-let novedadesGlobal = [];
-let novMostrados = 5;
-
-// ====================== HELPERS ======================
-function qs(id){ return document.getElementById(id); }
-
-function getClienteFromUrlOrStorage(){
-  const params = new URLSearchParams(window.location.search);
-  const c = (params.get("c") || "").trim();
-  if (c) return c;
-
-  // fallback (ajusté varias keys comunes por si cambia tu login)
-  return (
-    localStorage.getItem("cod_cliente") ||
-    localStorage.getItem("codCliente") ||
-    localStorage.getItem("cliente") ||
-    localStorage.getItem("customer") ||
-    localStorage.getItem("customer_id") ||
-    ""
-  ).trim();
-}
-
-function getVistaFromUrl(){
-  const params = new URLSearchParams(window.location.search);
-  const v = (params.get("v") || "").trim().toLowerCase();
-  if (v === "hist" || v === "sug" || v === "nov") return v;
-  return "hist";
-}
-
-function setEstado(txt){
-  qs("estado").textContent = txt;
-}
-
-function mostrar(which){
-  vista = which;
-
-  qs("modHist").classList.toggle("hidden", which !== "hist");
-  qs("modSug").classList.toggle("hidden", which !== "sug");
-  qs("modNov").classList.toggle("hidden", which !== "nov");
-
-  qs("tabHist").classList.toggle("active", which === "hist");
-  qs("tabSug").classList.toggle("active", which === "sug");
-  qs("tabNov").classList.toggle("active", which === "nov");
-}
-
-function escapeHtml(s){
-  return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function renderTable(targetId, data){
-  const el = qs(targetId);
-  if (!data || data.length === 0){
-    el.innerHTML = `<div class="empty">No hay datos.</div>`;
-    return;
-  }
-
-  const cols = Object.keys(data[0]);
-  let html = `<div class="tablewrap"><table><thead><tr>`;
-  for (const c of cols) html += `<th>${escapeHtml(c)}</th>`;
-  html += `</tr></thead><tbody>`;
-
-  for (const row of data){
-    html += `<tr>`;
-    for (const c of cols){
-      html += `<td>${escapeHtml(row[c])}</td>`;
+    const line = $('histClientLine');
+    if (line) {
+      const name = String(profile.business_name || '').trim();
+      const cod = String(profile.cod_cliente || '').trim();
+      line.textContent = `Cliente: ${name || '—'}${cod ? ` (Cod ${cod})` : ''}`;
     }
-    html += `</tr>`;
+
+    const orders = await loadOrders(profile.id);
+    const orderIds = orders.map(o => o.id);
+
+    const items = await loadItemsByOrderIds(orderIds);
+
+    render(orders, items);
+  } catch (err) {
+    console.error(err);
+    showTable(false);
+    showError('Error al cargar el historial. Revisá RLS/permiso en orders y order_items.');
   }
-
-  html += `</tbody></table></div>`;
-  el.innerHTML = html;
-}
-
-// ====================== LOADERS ======================
-async function cargarHistorial(cliente){
-  setEstado("Cargando historial…");
-
-  const { data, error } = await sb.rpc("pivot_cliente_mensual", { p_cliente: cliente });
-
-  if (error){
-    console.error(error);
-    setEstado("Error al cargar historial.");
-    qs("modHist").innerHTML = `<div class="empty">Error al cargar historial.</div>`;
-    return;
-  }
-
-  if (!data || data.length === 0){
-    setEstado("Sin datos de historial.");
-    qs("modHist").innerHTML = `<div class="empty">No hay datos.</div>`;
-    return;
-  }
-
-  // render en modHist
-  qs("modHist").innerHTML = `<div id="tablaHist"></div>`;
-  renderTable("tablaHist", data);
-  setEstado("Historial cargado.");
-}
-
-async function cargarSugerencias(cliente){
-  setEstado("Cargando sugerencias…");
-
-  const { data, error } = await sb.rpc("sugerencias_cliente", { p_cliente: cliente });
-
-  if (error){
-    console.error(error);
-    setEstado("Error al cargar sugerencias.");
-    qs("tablaSug").innerHTML = `<div class="empty">Error al cargar sugerencias.</div>`;
-    return;
-  }
-
-  sugerenciasGlobal = Array.isArray(data) ? data : [];
-  sugMostrados = 5;
-
-  if (sugerenciasGlobal.length === 0){
-    setEstado("Sin sugerencias.");
-    qs("tablaSug").innerHTML = `<div class="empty">No hay sugerencias.</div>`;
-    return;
-  }
-
-  renderTable("tablaSug", sugerenciasGlobal.slice(0, sugMostrados));
-  setEstado("Sugerencias cargadas.");
-}
-
-async function cargarNovedades(cliente){
-  setEstado("Cargando novedades…");
-
-  const { data, error } = await sb.rpc("novedades_cliente", { p_cliente: cliente });
-
-  if (error){
-    console.error(error);
-    setEstado("Error al cargar novedades.");
-    qs("tablaNov").innerHTML = `<div class="empty">Error al cargar novedades.</div>`;
-    return;
-  }
-
-  novedadesGlobal = Array.isArray(data) ? data : [];
-  novMostrados = 5;
-
-  if (novedadesGlobal.length === 0){
-    setEstado("Sin novedades.");
-    qs("tablaNov").innerHTML = `<div class="empty">No hay novedades.</div>`;
-    return;
-  }
-
-  renderTable("tablaNov", novedadesGlobal.slice(0, novMostrados));
-  setEstado("Novedades cargadas.");
-}
-
-async function cargarVista(){
-  const cliente = getClienteFromUrlOrStorage();
-
-  if (!cliente){
-    setEstado("No se detectó cliente logueado.");
-    qs("clienteInfo").textContent = "";
-    qs("modHist").innerHTML = `<div class="empty">No se detectó cliente logueado. Volvé a Mayorista e ingresá.</div>`;
-    return;
-  }
-
-  qs("clienteInfo").textContent = `Cliente: ${cliente}`;
-
-  if (vista === "hist") return cargarHistorial(cliente);
-  if (vista === "sug")  return cargarSugerencias(cliente);
-  if (vista === "nov")  return cargarNovedades(cliente);
-}
-
-// ====================== INIT ======================
-document.addEventListener("DOMContentLoaded", () => {
-  // vista inicial desde URL (?v=hist|sug|nov)
-  mostrar(getVistaFromUrl());
-
-  // tabs
-  document.querySelectorAll(".tab").forEach(btn => {
-    btn.addEventListener("click", () => {
-      mostrar(btn.dataset.tab);
-      cargarVista();
-    });
-  });
-
-  // ver más
-  qs("btnMasSug").addEventListener("click", () => {
-    sugMostrados += 5;
-    renderTable("tablaSug", sugerenciasGlobal.slice(0, sugMostrados));
-  });
-
-  qs("btnMasNov").addEventListener("click", () => {
-    novMostrados += 5;
-    renderTable("tablaNov", novedadesGlobal.slice(0, novMostrados));
-  });
-
-  // back / recargar
-  qs("btnBack").addEventListener("click", () => {
-    // vuelve a mayorista (si querés, podés poner hash #profile)
-    window.location.href = "./mayorista.html";
-  });
-
-  qs("btnRecargar").addEventListener("click", () => cargarVista());
-
-  // cargar automático al abrir
-  cargarVista();
 });
-
