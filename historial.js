@@ -101,7 +101,7 @@ async function loadItemsByOrderIds(orderIds) {
   return data || [];
 }
 
-function render(orders, items) {
+function (orders, items) {
   const tbody = $('histTbody');
   if (!tbody) return;
 
@@ -159,7 +159,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const orderIds = orders.map(o => o.id);
 
     const items = await loadItemsByOrderIds(orderIds);
-
+    
+    console.log("ORDERS:", orders);
+    console.log("PROFILE ID:", profile.id);
     render(orders, items);
   } catch (err) {
     console.error(err);
@@ -167,3 +169,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     showError('Error al cargar el historial. Revisá RLS/permiso en orders y order_items.');
   }
 });
+
