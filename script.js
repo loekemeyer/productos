@@ -2181,7 +2181,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.submitOrder = submitOrder;
   window.openProfile = openProfile;
   window.openChangePassword = openChangePassword;
+// ✅ Sacar "Cambiar contraseña" del menú aunque no tenga id
+function removeChangePassItems() {
+  document.querySelectorAll('#userMenu .user-menu-item, #userMenu button, #userMenu a, #userMenu div, #userMenu span')
+    .forEach(el => {
+      const t = (el.textContent || '').trim().toLowerCase();
+      if (t === 'cambiar contraseña' || t.includes('cambiar contraseña')) {
+        el.remove();
+      }
+    });
 
+  // mobile (por si también existe)
+  document.querySelectorAll('#mobileUserMenu .user-menu-item, #mobileUserMenu button, #mobileUserMenu a, #mobileUserMenu div, #mobileUserMenu span')
+    .forEach(el => {
+      const t = (el.textContent || '').trim().toLowerCase();
+      if (t === 'cambiar contraseña' || t.includes('cambiar contraseña')) {
+        el.remove();
+      }
+    });
+}
+
+// correr al cargar y también después (por si se renderiza tarde)
+removeChangePassItems();
+setTimeout(removeChangePassItems, 300);
+setTimeout(removeChangePassItems, 1000);
+  
   // =============================
   // SORT (desktop botones + selects + mobile) ✅ ÚNICO BLOQUE
   // =============================
@@ -2648,5 +2672,6 @@ function abrirHistorial(vista) {
     }
   }, 100);
 }
+
 
 
