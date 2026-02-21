@@ -1,114 +1,67 @@
-// ================= SUPABASE =================
-const SUPABASE_URL = "https://kwkclwhmoygunqmlegrg.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_mVX5MnjwM770cNjgiL6yLw_LDNl9pML";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Historial de Compras</title>
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-// helpers
-const $ = (id) => document.getElementById(id);
-
-function setStatus(txt) {
-  $("statusBox").textContent = txt;
+<style>
+body{
+  font-family: Arial;
+  background:#f4f4f4;
+  padding:30px;
 }
 
-function showError(msg) {
-  const el = $("errorBox");
-  el.style.display = "block";
-  el.textContent = msg;
+.card{
+  background:white;
+  padding:25px;
+  border-radius:10px;
+  max-width:1200px;
+  margin:auto;
+  box-shadow:0 0 10px rgba(0,0,0,.1);
 }
 
-function showTable(show) {
-  $("histTable").style.display = show ? "table" : "none";
+h1{margin:0 0 10px}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
 }
 
-function volverInicio() {
-  window.location.href = "./mayorista.html";
+th{
+  background:#111827;
+  color:white;
+  padding:10px;
+  font-size:14px;
 }
 
-// ================= LOGIN REQUIRED =================
-async function requireLogin() {
-  const { data } = await supabaseClient.auth.getSession();
-
-  if (!data.session) {
-    window.location.href = "./mayorista.html";
-    return null;
-  }
-
-  return data.session;
+td{
+  padding:8px;
+  border-bottom:1px solid #ddd;
+  text-align:center;
 }
 
-// ================= PERFIL =================
-async function loadCustomerProfileByAuth(userId) {
-  const { data, error } = await supabaseClient
-    .from("customers")
-    .select("id, cod_cliente, business_name")
-    .eq("auth_user_id", userId)
-    .maybeSingle();
+td.desc{text-align:left}
+</style>
+</head>
 
-  if (error) throw error;
-  if (!data) throw new Error("No se encontró el perfil del cliente.");
+<body>
 
-  return data;
-}
+<div class="card">
+  <h1>Historial de compras</h1>
+  <div id="cliente"></div>
 
-// ================= HISTORIAL =================
-async function loadOrders(customerCode) {
-  const cod = String(customerCode || "").trim();
+  <div id="status">Cargando...</div>
 
-  const { data, error } = await supabaseClient
-    .from("sales_lines")
-    .select("invoice_date, customer_code, item_code, boxes")
-    .eq("customer_code", cod)
-    .order("invoice_date", { ascending: false });
+  <table id="tabla" style="display:none">
+    <thead id="thead"></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
 
-  if (error) throw error;
-  return data || [];
-}
+<script src="historial.js"></script>
 
-// ================= RENDER =================
-function render(lines) {
-  const tbody = $("histTbody");
-
-  if (!lines.length) {
-    setStatus("No hay compras registradas.");
-    showTable(false);
-    return;
-  }
-
-  setStatus("");
-  showTable(true);
-
-  tbody.innerHTML = lines.map(l => `
-    <tr>
-      <td>${l.invoice_date}</td>
-      <td>${l.item_code}</td>
-      <td>${l.boxes}</td>
-    </tr>
-  `).join("");
-}
-
-// ================= INIT =================
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    setStatus("Cargando...");
-
-    const session = await requireLogin();
-    if (!session) return;
-
-    const profile = await loadCustomerProfileByAuth(session.user.id);
-
-    const line = $("histClientLine");
-    if (line) {
-      line.textContent =
-        `Cliente: ${profile.business_name} (Cod ${profile.cod_cliente})`;
-    }
-
-    const lines = await loadOrders(profile.cod_cliente);
-    render(lines);
-
-  } catch (err) {
-    console.error(err);
-    showError("Error al cargar el historial.");
-    showTable(false);
-  }
-});
+</body>
+</html>
