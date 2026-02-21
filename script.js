@@ -713,7 +713,7 @@ function renderCategoriesMenu() {
 
   const ddAll = $('ddToggleAll');
   if (ddAll) {
-    ddAll.addEventListener('change', () => {
+    ddAll.addEventListener('', () => {
       filterAll = ddAll.checked;
       if (filterAll) filterCats.clear();
       if (!filterAll && filterCats.size === 0) filterAll = true;
@@ -725,7 +725,7 @@ function renderCategoriesMenu() {
   }
 
   menu.querySelectorAll('.dd-toggle-cat').forEach((inp) => {
-    inp.addEventListener('change', () => {
+    inp.addEventListener('', () => {
       const cat = inp.dataset.cat;
       if (inp.checked) filterCats.add(cat);
       else filterCats.delete(cat);
@@ -2180,7 +2180,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.updateCart = updateCart;
   window.submitOrder = submitOrder;
   window.openProfile = openProfile;
-  window.openChangePassword = openChangePassword;
 // ✅ Sacar "Cambiar contraseña" del menú aunque no tenga id
 function removeChangePassItems() {
   document.querySelectorAll('#userMenu .user-menu-item, #userMenu button, #userMenu a, #userMenu div, #userMenu span')
@@ -2672,6 +2671,7 @@ function abrirHistorial(vista) {
     }
   }, 100);
 }
+
 
 
 
