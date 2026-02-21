@@ -1,58 +1,43 @@
-// =========================
-// SUPABASE
-// =========================
-
+// ================= SUPABASE =================
 const SUPABASE_URL = "https://kwkclwhmoygunqmlegrg.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_mVX5MnjwM770cNjgiL6yLw_LDNl9pML";
 
-const SUPABASE_ANON_KEY =
-  "sb_publishable_mVX5MnjwM770cNjgiL6yLw_LDNl9pML";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const supabaseClient = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
-
-// =========================
-// HELPERS
-// =========================
-
+// helpers
 const $ = (id) => document.getElementById(id);
 
 function setStatus(txt) {
-  const el = $("status");
-  if (el) el.textContent = txt;
+  $("statusBox").textContent = txt;
 }
 
 function showError(msg) {
   const el = $("errorBox");
-  if (el) {
-    el.style.display = "block";
-    el.textContent = msg;
-  }
+  el.style.display = "block";
+  el.textContent = msg;
 }
 
 function showTable(show) {
-  const t = $("histTable");
-  if (t) t.style.display = show ? "table" : "none";
+  $("histTable").style.display = show ? "table" : "none";
 }
 
-// =========================
-// LOGIN REQUIRED
-// =========================
+function volverInicio() {
+  window.location.href = "./mayorista.html";
+}
 
+// ================= LOGIN REQUIRED =================
 async function requireLogin() {
   const { data } = await supabaseClient.auth.getSession();
+
   if (!data.session) {
     window.location.href = "./mayorista.html";
     return null;
   }
+
   return data.session;
 }
 
-// =========================
-// PERFIL CLIENTE
-// =========================
-
+// ================= PERFIL =================
 async function loadCustomerProfileByAuth(userId) {
   const { data, error } = await supabaseClient
     .from("customers")
@@ -66,10 +51,7 @@ async function loadCustomerProfileByAuth(userId) {
   return data;
 }
 
-// =========================
-// CARGA HISTORIAL (sales_lines)
-// =========================
-
+// ================= HISTORIAL =================
 async function loadOrders(customerCode) {
   const cod = String(customerCode || "").trim();
 
@@ -83,13 +65,9 @@ async function loadOrders(customerCode) {
   return data || [];
 }
 
-// =========================
-// RENDER
-// =========================
-
+// ================= RENDER =================
 function render(lines) {
   const tbody = $("histTbody");
-  if (!tbody) return;
 
   if (!lines.length) {
     setStatus("No hay compras registradas.");
@@ -97,29 +75,22 @@ function render(lines) {
     return;
   }
 
-  showTable(true);
   setStatus("");
+  showTable(true);
 
-  tbody.innerHTML = lines
-    .map((l) => {
-      return `
-      <tr>
-        <td>${l.invoice_date}</td>
-        <td>${l.item_code}</td>
-        <td>${l.boxes}</td>
-      </tr>
-      `;
-    })
-    .join("");
+  tbody.innerHTML = lines.map(l => `
+    <tr>
+      <td>${l.invoice_date}</td>
+      <td>${l.item_code}</td>
+      <td>${l.boxes}</td>
+    </tr>
+  `).join("");
 }
 
-// =========================
-// INIT
-// =========================
-
+// ================= INIT =================
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    setStatus("Cargando…");
+    setStatus("Cargando...");
 
     const session = await requireLogin();
     if (!session) return;
@@ -128,15 +99,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const line = $("histClientLine");
     if (line) {
-      const name = String(profile.business_name || "").trim();
-      const cod = String(profile.cod_cliente || "").trim();
-      line.textContent = `Cliente: ${name} (Cod ${cod})`;
+      line.textContent =
+        `Cliente: ${profile.business_name} (Cod ${profile.cod_cliente})`;
     }
 
-    const cod = String(profile.cod_cliente || "").trim();
-    const lines = await loadOrders(cod);
-
+    const lines = await loadOrders(profile.cod_cliente);
     render(lines);
+
   } catch (err) {
     console.error(err);
     showError("Error al cargar el historial.");
