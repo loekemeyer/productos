@@ -91,19 +91,7 @@ async function loadOrders(customerCode) {
   return data || [];
 }
 
-async function loadItemsByOrderIds(orderIds) {
-  if (!orderIds.length) return [];
-
-  const { data, error } = await supabaseClient
-    .from('order_items')
-    .select('order_id, cajas, uxb')
-    .in('order_id', orderIds);
-
-  if (error) throw error;
-  return data || [];
-}
-
-function (orders, items) {
+function render(orders, items) {
   const tbody = $('histTbody');
   if (!tbody) return;
 
@@ -168,6 +156,7 @@ renderSalesLines(lines);
     showError('Error al cargar el historial. Revisá RLS/permiso en orders y order_items.');
   }
 });
+
 
 
 
