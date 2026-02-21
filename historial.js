@@ -1,166 +1,158 @@
 // ================= SUPABASE =================
 const SUPABASE_URL = "https://kwkclwhmoygunqmlegrg.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_mVX5MnjwM770cNjgiL6yLw_LDNl9pML";
+const SUPABASE_KEY = "sb_publishable_mVX5MnjwM770cNjgiL6yLw_LDNl9pML";
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ================= HELPERS =================
-const $ = (id) => document.getElementById(id);
-
-function setStatus(txt) {
-  $("status").textContent = txt || "";
-}
-
-function showError(msg) {
-  const el = $("errorBox");
-  el.style.display = "block";
-  el.textContent = msg;
-}
+// helpers
+const $ = id => document.getElementById(id);
+const statusBox = $("status");
+const tabla = $("tabla");
+const thead = $("thead");
+const tbody = $("tbody");
 
 // ================= LOGIN =================
-async function requireLogin() {
-  const { data, error } = await supabaseClient.auth.getSession();
-  if (error) throw error;
-
-  if (!data?.session) {
-    window.location.href = "../mayorista.html";
+async function getSession(){
+  const { data } = await supabase.auth.getSession();
+  if(!data.session){
+    location.href = "../mayorista.html";
     return null;
   }
   return data.session;
 }
 
 // ================= PERFIL =================
-async function loadCustomerProfileByAuth(userId) {
-  const { data, error } = await supabaseClient
+async function getCliente(session){
+  const { data } = await supabase
     .from("customers")
-    .select("id,cod_cliente,business_name")
-    .eq("auth_user_id", userId)
+    .select("cod_cliente, business_name")
+    .eq("auth_user_id", session.user.id)
     .single();
 
-  if (error) throw error;
-  if (!data) throw new Error("No se encontró el perfil del cliente.");
   return data;
 }
 
-// ================= CARGA VENTAS =================
-async function loadSalesLines(customerCode) {
-  const cod = String(customerCode || "").trim();
-
-  const { data, error } = await supabaseClient
+// ================= DATA =================
+async function getSales(codCliente){
+  const { data, error } = await supabase
     .from("sales_lines")
-    .select("invoice_date,item_code,boxes")
-    .eq("customer_code", cod);
+    .select("invoice_date, item_code, boxes")
+    .eq("customer_code", String(codCliente));
 
-  if (error) throw error;
-  return data || [];
-}
-
-// ================= AGRUPAR (item + mes) =================
-function toMonthKey(dateStr) {
-  const d = new Date(dateStr);
-  const m = d.getMonth() + 1;
-  const y = d.getFullYear();
-  return `${y}-${String(m).padStart(2, "0")}`; // 2026-01
-}
-
-function monthLabel(monthKey) {
-  // monthKey: YYYY-MM
-  const [y, m] = monthKey.split("-").map(Number);
-  const d = new Date(y, m - 1, 1);
-  const mes = d.toLocaleString("es-AR", { month: "short" });
-  // "ene", "feb"... => "Ene/26"
-  return `${mes.charAt(0).toUpperCase() + mes.slice(1)}/${String(y).slice(2)}`;
-}
-
-function buildMatrix(lines) {
-  const monthsSet = new Set();
-  const items = new Map(); // item_code => { total, months: {YYYY-MM: boxes} }
-
-  for (const l of lines) {
-    const code = String(l.item_code ?? "").trim();
-    if (!code) continue;
-
-    const mk = toMonthKey(l.invoice_date);
-    monthsSet.add(mk);
-
-    if (!items.has(code)) items.set(code, { total: 0, months: {} });
-
-    const rec = items.get(code);
-    const qty = Number(l.boxes || 0);
-
-    rec.total += qty;
-    rec.months[mk] = (rec.months[mk] || 0) + qty;
+  if(error){
+    console.log(error);
+    statusBox.innerText = "Error cargando ventas";
+    return [];
   }
 
-  const months = Array.from(monthsSet).sort(); // YYYY-MM ordena perfecto
-  return { items, months };
+  return data;
 }
 
 // ================= RENDER =================
-function renderTable(items, months) {
-  // Orden por total desc
-  const rows = Array.from(items.entries()).sort((a, b) => b[1].total - a[1].total);
+function renderTabla(rows){
 
-  let html = `<table>
-    <thead>
-      <tr>
-        <th>Cod</th>
-        <th>Descripción</th>
-        <th>Total</th>`;
-
-  for (const mk of months) {
-    html += `<th>${monthLabel(mk)}</th>`;
+  if(!rows.length){
+    statusBox.innerText = "Sin datos";
+    return;
   }
 
-  html += `</tr></thead><tbody>`;
+  // meses únicos
+  const mesesSet = new Set();
+  rows.forEach(r=>{
+    const d = new Date(r.invoice_date);
+    const key = `${d.getFullYear()}-${d.getMonth()+1}`;
+    mesesSet.add(key);
+  });
 
-  for (const [code, rec] of rows) {
-    html += `<tr>
-      <td class="code">${code}</td>
-      <td class="left">${code}</td>
-      <td>${rec.total}</td>`;
+  const meses = Array.from(mesesSet).sort((a,b)=> new Date(a) - new Date(b));
 
-    for (const mk of months) {
-      const v = rec.months[mk] || "";
-      html += `<td>${v || ""}</td>`;
+  // agrupar por producto
+  const map = {};
+
+  rows.forEach(r=>{
+    const item = r.item_code;
+    const d = new Date(r.invoice_date);
+    const key = `${d.getFullYear()}-${d.getMonth()+1}`;
+
+    if(!map[item]){
+      map[item] = {
+        desc: item,
+        total:0,
+        meses:{}
+      };
     }
 
-    html += `</tr>`;
-  }
+    map[item].total += r.boxes;
+    map[item].meses[key] = (map[item].meses[key] || 0) + r.boxes;
+  });
 
-  html += `</tbody></table>`;
+  const arr = Object.entries(map)
+    .map(([cod,v])=>({cod,...v}))
+    .sort((a,b)=> b.total - a.total);
 
-  $("histTable").innerHTML = html;
+  // HEADER
+  thead.innerHTML = "";
+  const trh = document.createElement("tr");
+
+  ["Código","Descripción","Total"].forEach(t=>{
+    const th = document.createElement("th");
+    th.innerText = t;
+    trh.appendChild(th);
+  });
+
+  meses.forEach(m=>{
+    const [y,mo] = m.split("-");
+    const fecha = new Date(y,mo-1);
+    const nombre = fecha.toLocaleString("es-AR",{month:"short",year:"numeric"});
+    const th = document.createElement("th");
+    th.innerText = nombre;
+    trh.appendChild(th);
+  });
+
+  thead.appendChild(trh);
+
+  // BODY
+  tbody.innerHTML = "";
+
+  arr.forEach(p=>{
+    const tr = document.createElement("tr");
+
+    const tdCod = document.createElement("td");
+    tdCod.innerText = p.cod;
+    tr.appendChild(tdCod);
+
+    const tdDesc = document.createElement("td");
+    tdDesc.innerText = p.desc;
+    tdDesc.className = "desc";
+    tr.appendChild(tdDesc);
+
+    const tdTotal = document.createElement("td");
+    tdTotal.innerText = p.total;
+    tr.appendChild(tdTotal);
+
+    meses.forEach(m=>{
+      const td = document.createElement("td");
+      td.innerText = p.meses[m] || "";
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  statusBox.style.display = "none";
+  tabla.style.display = "table";
 }
 
 // ================= INIT =================
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    setStatus("Cargando...");
+async function init(){
+  const session = await getSession();
+  if(!session) return;
 
-    const session = await requireLogin();
-    if (!session) return;
+  const cliente = await getCliente(session);
+  $("cliente").innerText = `Cliente: ${cliente.business_name} (${cliente.cod_cliente})`;
 
-    const profile = await loadCustomerProfileByAuth(session.user.id);
+  const ventas = await getSales(cliente.cod_cliente);
+  renderTabla(ventas);
+}
 
-    $("clienteNombre").textContent =
-      `Cliente: ${profile.business_name} (Cod ${profile.cod_cliente})`;
-
-    const lines = await loadSalesLines(profile.cod_cliente);
-
-    if (!lines.length) {
-      setStatus("No hay compras registradas.");
-      $("histTable").innerHTML = "";
-      return;
-    }
-
-    const { items, months } = buildMatrix(lines);
-    renderTable(items, months);
-
-    setStatus("");
-  } catch (err) {
-    console.error(err);
-    showError(err?.message || "Error al cargar historial.");
-    setStatus("");
-  }
-});
+init();
