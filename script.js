@@ -2318,46 +2318,6 @@ document.getElementById('viewOrderBtn')?.addEventListener('click', () => {
   showSection('carrito');
 });
 
-  // =============================
-// PASSWORD MODAL: abrir desde menú + perfil
-// =============================
-document.getElementById('menuChangePass')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-
-  // 1) cerrar menú SIN aria-hidden primero (para evitar warnings y focus issues)
-  const um = document.getElementById('userMenu');
-  if (um) {
-    um.classList.remove('open');
-    um.removeAttribute('aria-hidden');
-  }
-  document.getElementById('userToggleBtn')?.setAttribute('aria-expanded', 'false');
-
-  // 2) quitar foco del botón del menú
-  e.currentTarget?.blur();
-
-  // 3) ir a perfil
-  showSection('perfil');
-
-  // 4) abrir modal en el próximo tick (cuando ya cambió la sección)
-  setTimeout(() => {
-    openPassModal();
-  }, 0);
-});
-
-document.getElementById('mobileMenuChangePass')?.addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-
-  closeMobileUserMenu?.();
-  e.currentTarget?.blur();
-  showSection('perfil');
-
-  setTimeout(() => {
-    openPassModal();
-  }, 0);
-});
-
 // Botón dentro del perfil
 document.getElementById('btnOpenPassModal')?.addEventListener('click', (e) => {
   e.preventDefault();
@@ -2688,4 +2648,5 @@ function abrirHistorial(vista) {
     }
   }, 100);
 }
+
 
