@@ -620,7 +620,7 @@ footer{
   gap: 72px;
   width: max-content;
   padding: 10px 0;
-  animation: clientesLoop 32s linear infinite;
+  animation: clientesLoop 64s linear infinite;
   will-change: transform;
 }
 
@@ -648,6 +648,7 @@ footer{
 .clientes-carousel:hover .clientes-track{
   animation-play-state: paused;
 }
+
 
 
 
