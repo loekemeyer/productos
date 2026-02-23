@@ -8,24 +8,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-function initClientesBounce() {
-  const wrap = document.getElementById("clientesBounce");
-  const track = document.getElementById("clientesTrack");
-  if (!wrap || !track) return;
-
-  const computeShift = () => {
-    const wrapW = wrap.clientWidth;
-    const trackW = track.scrollWidth;
-
-    // cuánto puede moverse sin “vaciar” el carrusel
-    const shift = Math.max(0, trackW - wrapW);
-
-    // setea variable CSS para el keyframe
-    track.style.setProperty("--clientes-shift", `${shift}px`);
-
-    // si no hay nada que mover, frenamos animación
-    track.style.animationPlayState = shift === 0 ? "paused" : "running";
-  };
 
   // esperar a que carguen las imágenes (si no, el ancho da mal)
   const imgs = Array.from(track.querySelectorAll("img"));
@@ -53,8 +35,6 @@ function initClientesBounce() {
     window.__clientesResizeT = setTimeout(computeShift, 120);
   });
 }
-
-document.addEventListener("DOMContentLoaded", initClientesBounce);
 
 
 function initLegalModals(){
@@ -279,5 +259,45 @@ function initLegalModals(){
 
 document.addEventListener("DOMContentLoaded", initLegalModals);
 
+// carrusel 
+
+function initClientesLoopSpeed(){
+  const track = document.querySelector(".clientes-track");
+  if (!track) return;
+
+  // Velocidad objetivo: px/seg (bajá este número = más lento)
+  const PX_PER_SEC = 25; // probá 18–30
+
+  const compute = () => {
+    // Como duplicaste el set, el loop recorre la mitad del track
+    const distance = track.scrollWidth / 2;
+    const durationSec = Math.max(20, distance / PX_PER_SEC);
+
+    track.style.setProperty("--clientes-duration", `${durationSec}s`);
+  };
+
+  // Esperar a que carguen imágenes para medir bien
+  const imgs = Array.from(track.querySelectorAll("img"));
+  let pending = imgs.length;
+
+  const done = () => {
+    pending--;
+    if (pending <= 0) compute();
+  };
+
+  if (pending === 0) compute();
+  imgs.forEach(img => {
+    if (img.complete) return done();
+    img.addEventListener("load", done, { once: true });
+    img.addEventListener("error", done, { once: true });
+  });
+
+  window.addEventListener("resize", () => {
+    clearTimeout(window.__clientesLoopT);
+    window.__clientesLoopT = setTimeout(compute, 120);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", initClientesLoopSpeed);
 
 
