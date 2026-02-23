@@ -630,12 +630,14 @@ footer{
 }
 
 /* B/N + hover visible sin color */
-.clientes-track img{
-  height: 81px;   /* 50% más grande */
-  object-fit: contain;
-  opacity: .72;
-  filter: grayscale(100%) contrast(1.1);
-  transition: transform .22s ease, opacity .22s ease, filter .22s ease;
+.clientes-track{
+  display: flex;
+  align-items: center;
+  gap: 72px;
+  width: max-content;
+  padding: 10px 0;
+  animation: clientesLoop var(--clientes-duration, 64s) linear infinite;
+  will-change: transform;
 }
 
 .clientes-track img:hover{
@@ -648,6 +650,7 @@ footer{
 .clientes-carousel:hover .clientes-track{
   animation-play-state: paused;
 }
+
 
 
 
