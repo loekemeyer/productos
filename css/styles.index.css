@@ -23,7 +23,7 @@ img{max-width:100%;display:block}
   position: relative;
   height: 65vh;              /* ← proporción más equilibrada */
   min-height: 480px;         /* evita que quede muy chico en pantallas bajas */
-  background: url("../gif/bg.gif") center center / cover no-repeat;
+  background: url("../gif/Clásico-Web.gif") center center / cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
