@@ -13,11 +13,10 @@ const supabaseClient = window.supabase.createClient(
 );
 
 /***********************
- * GOOGLE SHEETS (APPS SCRIPT)
+ * GOOGLE SHEETS (PROXY)
  ***********************/
-const SHEETS_WEBAPP_URL =
-  'https://script.google.com/macros/s/AKfycby2LCHETP7mdN1En4mNtUaPRP-Aij6meoReh_-X_DnAI3BoF41HoXVfF5p-Oet97HAg/exec'; // termina en /exec
-const SHEETS_SECRET = 'Damian.10.2026.WEB';
+const SHEETS_PROXY_URL =
+  "https://kwkclwhmoygunqmlegrg.functions.supabase.co/sheets-proxy";
 
 /***********************
  * UI CONSTANTS
@@ -1890,32 +1889,31 @@ submitBtn.disabled = !(hasShipping && hasPayment && hasItems);
  * SEND TO SHEETS + SUBMIT ORDER
  ***********************/
 async function sendOrderToSheets({
-  orderNumber,          // N° Pedido (ej: orderId de Supabase)
-  codCliente,           // N° Cliente
+  orderNumber,
+  codCliente,
   vend,
-  condicionPago,        // texto (opcional)
-  condicionPagoCode,    // número: 8/9/10/11/12/13
+  condicionPago,
+  condicionPagoCode,
   sucursalEntrega,
-  items                // [{cod_art, cajas, uxb}]
+  items
 }) {
-  if (!SHEETS_WEBAPP_URL || !SHEETS_SECRET) {
-    throw new Error("Sheets config missing");
+  if (!SHEETS_PROXY_URL) {
+    throw new Error("Sheets proxy config missing");
+  }
+
+  if (!currentSession?.access_token) {
+    throw new Error("Not logged in");
   }
 
   const payload = {
-    secret: SHEETS_SECRET,
-
-    // ✅ nuevos campos para Apps Script
     order_number: String(orderNumber || "").trim(),
     condicion_pago_code: Number(condicionPagoCode || 0),
 
-    // ✅ campos existentes (Apps Script los usa)
     cod_cliente: String(codCliente || "").trim(),
     vend: String(vend || "").trim(),
     condicion_pago: String(condicionPago || "").trim(),
     sucursal_entrega: String(sucursalEntrega || "").trim(),
 
-    // ✅ items
     items: (items || []).map((it) => ({
       cod_art: String(it.cod_art || "").trim(),
       cajas: Number(it.cajas || 0),
@@ -1923,15 +1921,21 @@ async function sendOrderToSheets({
     })),
   };
 
-  // ✅ estable con Apps Script: evita CORS/preflight
-  await fetch(SHEETS_WEBAPP_URL, {
+  const resp = await fetch(SHEETS_PROXY_URL, {
     method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${currentSession.access_token}`,
+    },
     body: JSON.stringify(payload),
   });
 
-  // Con no-cors no se puede leer respuesta. Si no tiró error de red, asumimos enviado.
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok || data?.ok === false) {
+    throw new Error(data?.error || `Proxy error ${resp.status}`);
+  }
+
   return { ok: true };
 }
 
