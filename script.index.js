@@ -140,7 +140,7 @@ function initLegalModals(){
   terms: {
     title: "Términos y Condiciones de Uso",
     html: `
-      Última actualización: <em>20/02/2026</em></p>
+      <p>Última actualización: <em>20/02/2026</em></p>
 
       <hr>
 
@@ -299,5 +299,6 @@ function initClientesLoopSpeed(){
 }
 
 document.addEventListener("DOMContentLoaded", initClientesLoopSpeed);
+
 
 
