@@ -1,8 +1,9 @@
 // ================= SUPABASE =================
 const SUPABASE_URL = "https://kwkclwhmoygunqmlegrg.supabase.co";
-const SUPABASE_KEY = "sb_publishable_mVX5MnjwM770cNjgiL6yLw_LDNl9pML";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt3a2Nsd2htb3lndW5xbWxlZ3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MjA2NzUsImV4cCI6MjA4NTA5NjY3NX0.soqPY5hfA3RkAJ9jmIms8UtEGUc4WpZztpEbmDijOgU";
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // helpers
 const $ = (id) => document.getElementById(id);
@@ -24,12 +25,13 @@ async function getSession() {
     setStatus("Error de sesión.");
     return null;
   }
+
   if (!data?.session) {
     setStatus("No hay sesión iniciada. Volviendo a Mayorista…");
-    // ajustá path si corresponde
-    setTimeout(() => (location.href = "../mayorista.html"), 800);
+    setTimeout(() => (location.href = "./mayorista.html"), 800);
     return null;
   }
+
   return data.session;
 }
 
@@ -38,7 +40,7 @@ async function getCliente(session) {
     .from("customers")
     .select("cod_cliente, business_name")
     .eq("auth_user_id", session.user.id)
-    .maybeSingle(); // <- evita excepción si no hay fila
+    .maybeSingle();
 
   if (error) {
     console.error("getCliente error:", error);
@@ -52,77 +54,105 @@ async function getCliente(session) {
   return data;
 }
 
-async function getSales(codCliente) {
+/**
+ * IMPORTANTE
+ * Este endpoint debe existir en Supabase:
+ *   public.v_customer_item_month
+ * y debe estar agregado por mes (ym = 'YYYY-MM') y por item_code.
+ */
+async function getHistory() {
   const { data, error } = await sb
-    .from("sales_lines")
-    .select("invoice_date, item_code, boxes")
-    .eq("customer_code", String(codCliente))
-    .order("invoice_date", { ascending: true });
+    .from("v_customer_item_month")
+    .select("ym, item_code, description, boxes")
+    .order("ym", { ascending: false });
 
   if (error) {
-    console.error("getSales error:", error);
-    setStatus("Error cargando ventas (RLS o datos).");
+    console.error("getHistory error:", error);
+    setStatus("Error cargando historial.");
     return [];
   }
+
   return data || [];
 }
 
 function renderTabla(rows) {
-  if (!rows.length) {
+  if (!rows || !rows.length) {
     setStatus("Sin datos");
     return;
   }
 
+  // 1) Meses presentes (ym ya viene como 'YYYY-MM')
   const mesesSet = new Set();
-  rows.forEach((r) => {
-    if (!r.invoice_date) return;
-    const d = new Date(r.invoice_date);
-    if (Number.isNaN(d.getTime())) return;
-    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-    mesesSet.add(key);
-  });
+  for (const r of rows) {
+    const ym = (r.ym || "").trim();
+    if (!/^\d{4}-\d{2}$/.test(ym)) continue;
+    mesesSet.add(ym);
+  }
 
-  const meses = Array.from(mesesSet).sort((a, b) => new Date(a) - new Date(b));
+  // Orden: más reciente a la izquierda (DESC)
+  const meses = Array.from(mesesSet).sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
+  const meses60 = meses.slice(0, 60); // si hay 60 meses, muestra 60
 
+  // 2) Agrupar por item_code y sumar cajas por mes (por si viniera repetido)
   const map = {};
-  rows.forEach((r) => {
-    const item = r.item_code || "";
-    const boxes = Number(r.boxes) || 0;
-    const d = new Date(r.invoice_date);
-    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+  for (const r of rows) {
+    const item = (r.item_code || "").trim();
+    if (!item) continue;
 
-    if (!map[item]) map[item] = { desc: item, total: 0, meses: {} };
+    const key = (r.ym || "").trim();
+    if (!/^\d{4}-\d{2}$/.test(key)) continue;
+    if (!meses60.includes(key)) continue;
+
+    const boxes = Number(r.boxes) || 0;
+
+    if (!map[item]) {
+      map[item] = {
+        desc: (r.description || "").trim() || item,
+        total: 0,
+        meses: {},
+      };
+    }
+
     map[item].total += boxes;
     map[item].meses[key] = (map[item].meses[key] || 0) + boxes;
-  });
+  }
 
   const arr = Object.entries(map)
     .map(([cod, v]) => ({ cod, ...v }))
     .sort((a, b) => b.total - a.total);
 
-  // HEADER
+  // 3) Header
   thead.innerHTML = "";
   const trh = document.createElement("tr");
+
   ["Código", "Descripción", "Total"].forEach((t) => {
     const th = document.createElement("th");
     th.innerText = t;
     trh.appendChild(th);
   });
 
-  meses.forEach((m) => {
-    const [y, mo] = m.split("-");
-    const fecha = new Date(Number(y), Number(mo) - 1);
-    const nombre = fecha.toLocaleString("es-AR", { month: "short", year: "numeric" });
+  // formato mmm-yy
+  meses60.forEach((ym) => {
+    const y = Number(ym.slice(0, 4));
+    const m = Number(ym.slice(5, 7));
+    const fecha = new Date(y, m - 1, 1);
+
+    const nombre = fecha
+      .toLocaleString("es-AR", { month: "short" })
+      .replace(".", "")
+      .toLowerCase();
+
     const th = document.createElement("th");
-    th.innerText = nombre;
+    th.innerText = `${nombre}-${String(y).slice(2)}`;
     trh.appendChild(th);
   });
 
   thead.appendChild(trh);
 
-  // BODY
+  // 4) Body
   tbody.innerHTML = "";
-  arr.forEach((p) => {
+
+  for (const p of arr) {
     const tr = document.createElement("tr");
 
     const tdCod = document.createElement("td");
@@ -138,17 +168,23 @@ function renderTabla(rows) {
     tdTotal.innerText = p.total;
     tr.appendChild(tdTotal);
 
-    meses.forEach((m) => {
+    meses60.forEach((ym) => {
       const td = document.createElement("td");
-      td.innerText = p.meses[m] ? String(p.meses[m]) : "";
+      td.innerText = p.meses[ym] ? String(p.meses[ym]) : "";
       tr.appendChild(td);
     });
 
     tbody.appendChild(tr);
-  });
+  }
 
+  // 5) Mostrar y habilitar scroll horizontal
   statusBox.style.display = "none";
   tabla.style.display = "table";
+  tabla.style.width = "max-content";
+  tabla.style.minWidth = "100%";
+
+  const scrollParent = tabla.parentElement || document.body;
+  scrollParent.style.overflowX = "auto";
 }
 
 async function init() {
@@ -162,8 +198,8 @@ async function init() {
 
     $("cliente").innerText = `Cliente: ${cliente.business_name} (${cliente.cod_cliente})`;
 
-    const ventas = await getSales(cliente.cod_cliente);
-    renderTabla(ventas);
+    const rows = await getHistory();
+    renderTabla(rows);
   } catch (e) {
     console.error("Init crash:", e);
     setStatus("Error inesperado cargando historial. Ver consola.");

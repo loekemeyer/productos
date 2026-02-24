@@ -1,67 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Historial de Compras</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Historial de Compras</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase UMD (SOLO UNA VEZ) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
-<style>
-body{
-  font-family: Arial;
-  background:#f4f4f4;
-  padding:30px;
-}
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+        padding: 30px;
+        margin: 0;
+      }
 
-.card{
-  background:white;
-  padding:25px;
-  border-radius:10px;
-  max-width:1200px;
-  margin:auto;
-  box-shadow:0 0 10px rgba(0,0,0,.1);
-}
+      .card {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        max-width: 1200px;
+        margin: auto;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
 
-h1{margin:0 0 10px}
+      h1 {
+        margin: 0 0 10px;
+      }
 
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:20px;
-}
+      #status {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #666;
+      }
 
-th{
-  background:#111827;
-  color:white;
-  padding:10px;
-  font-size:14px;
-}
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
 
-td{
-  padding:8px;
-  border-bottom:1px solid #ddd;
-  text-align:center;
-}
+      th {
+        background: #111827;
+        color: white;
+        padding: 10px;
+        font-size: 14px;
+      }
 
-td.desc{text-align:left}
-</style>
-</head>
+      td {
+        padding: 8px;
+        border-bottom: 1px solid #ddd;
+        text-align: center;
+      }
 
-<body>
+      td.desc {
+        text-align: left;
+      }
+    </style>
+  </head>
 
-<div class="card">
-  <h1>Historial de compras</h1>
-  <div id="cliente"></div>
+  <body>
+    <div class="card">
+      <h1>Historial de compras</h1>
+      <div id="cliente"></div>
+      <div id="status">Cargando...</div>
 
-  <div id="status">Cargando...</div>
+      <table id="tabla" style="display: none">
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
 
-  <table id="tabla" style="display:none">
-    <thead id="thead"></thead>
-    <tbody id="tbody"></tbody>
-  </table>
-</div>
-
-<script src="historial.js"></script>
-
-</body>
+    <!-- Tu lógica del historial -->
+    <script src="historial.js"></script>
+  </body>
 </html>

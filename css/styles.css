@@ -3455,3 +3455,147 @@ body {
     gap: 12px;
   }
 }
+
+/* =========================
+   PERFIL - TAMAÑOS MÁS GRANDES
+   (PEGAR AL FINAL DEL styles.css)
+   ========================= */
+
+#perfil .section-header .section-title{
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+#perfil .profile-ra{
+  font-size: 28px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+#perfil .profile-row.two{
+  font-size: 18px;          /* antes 14px */
+  line-height: 1.35;
+  gap: 34px;                /* un poco más de aire entre columnas */
+}
+
+#perfil .profile-row.two b{
+  font-weight: 900;
+}
+
+/* Mobile: grande pero que entre bien */
+@media (max-width: 720px){
+  #perfil .section-header .section-title{ font-size: 26px; }
+  #perfil .profile-ra{ font-size: 22px; }
+  #perfil .profile-row.two{
+    font-size: 16px;
+    flex-direction: column; /* evita que quede apretado */
+    gap: 10px;
+  }
+}
+
+/* =========================================
+   PERFIL — MODERNO PERO COHERENTE CON LA WEB
+   (pegalo al FINAL del styles.css)
+   ========================================= */
+
+#perfil .section-header .section-title{
+  font-size: 30px !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+}
+
+/* Card blanca, sutil, premium */
+#perfil .profile-summary{
+  position: relative !important;
+  background: #fff !important;
+  border: 1px solid #e7e7ea !important;
+  border-radius: 14px !important;
+  padding: 18px !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.06) !important;
+  overflow: hidden !important;
+}
+
+/* acento mínimo arriba (sin despegarse del sitio) */
+#perfil .profile-summary::before{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important; top:0 !important; right:0 !important;
+  height: 4px !important;
+  background: linear-gradient(90deg, rgba(0,0,0,.06), rgba(0,0,0,.02)) !important;
+}
+
+/* Razón social / nombre */
+#perfil .profile-ra{
+  font-size: 25px !important;
+  font-weight: 800 !important;
+  margin: 4px 0 14px 0 !important;
+  color: #111 !important;
+}
+
+/* Layout de datos: prolijo */
+#perfil .profile-row.two{
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px 12px !important;
+  font-size: 16px !important;
+  line-height: 1.25 !important;
+}
+
+/* Items: blanco/grey muy suave (sin “glass”) */
+#perfil .profile-row.two p{
+  margin: 0 !important;
+  padding: 12px 12px !important;
+  border-radius: 12px !important;
+  background: #fafafa !important;
+  border: 1px solid #ededf0 !important;
+  transition: border-color .15s ease, box-shadow .15s ease !important;
+}
+
+/* Etiqueta */
+#perfil .profile-row.two p b{
+  display: block !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: #666 !important;
+  margin-bottom: 4px !important;
+}
+
+/* Hover leve (solo un toque) */
+#perfil .profile-row.two p:hover{
+  border-color: #dcdce1 !important;
+  box-shadow: 0 10px 18px rgba(0,0,0,.06) !important;
+}
+
+/* Mobile */
+@media (max-width: 720px){
+  #perfil .section-header .section-title{ font-size: 20px !important; }
+  #perfil .profile-ra{ font-size: 17px !important; }
+  #perfil .profile-row.two{ grid-template-columns: 1fr !important; }
+}
+
+/* =====================================
+   BOTÓN "VOLVER A PRODUCTOS"
+   alineado con el container del nav
+   ===================================== */
+
+#volverProductos,
+.btn-volver,
+.back-btn {
+  margin-left: 45px !important; /* mismo padding que el nav */
+}
+
+/* si está dentro de un section sin container */
+.section > .back-btn,
+.section > #volverProductos {
+  margin-left: 24px !important;
+}
+
+/* mobile más compacto */
+@media (max-width: 720px){
+  #volverProductos,
+  .btn-volver,
+  .back-btn{
+    margin-left: 16px !important;
+  }
+}

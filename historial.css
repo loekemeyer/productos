@@ -145,3 +145,6 @@ th{
   color: var(--muted);
   background:#fbfbff;
 }
+
+.card { overflow-x: auto; }
+table { min-width: 100%; }
