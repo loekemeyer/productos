@@ -8,6 +8,24 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+function initClientesBounce() {
+  const wrap = document.getElementById("clientesBounce");
+  const track = document.getElementById("clientesTrack");
+  if (!wrap || !track) return;
+
+  const computeShift = () => {
+    const wrapW = wrap.clientWidth;
+    const trackW = track.scrollWidth;
+
+    // cuánto puede moverse sin “vaciar” el carrusel
+    const shift = Math.max(0, trackW - wrapW);
+
+    // setea variable CSS para el keyframe
+    track.style.setProperty("--clientes-shift", `${shift}px`);
+
+    // si no hay nada que mover, frenamos animación
+    track.style.animationPlayState = shift === 0 ? "paused" : "running";
+  };
 
   // esperar a que carguen las imágenes (si no, el ancho da mal)
   const imgs = Array.from(track.querySelectorAll("img"));
@@ -36,8 +54,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 }
 
+document.addEventListener("DOMContentLoaded", initClientesBounce);
 
-function initLegalModals(){
+
+function initLegalModals() {
   const modal = document.getElementById("legalModal");
   if (!modal) return;
 
@@ -45,11 +65,11 @@ function initLegalModals(){
   const contentEl = document.getElementById("legalContent");
   const closeBtn = modal.querySelector(".modal-close");
 
+  // ✅ Contenido (podés pegar tus textos largos acá)
   const CONTENT = {
-  privacy: {
-    title: "Política de Privacidad",
-    html: `
-      <h4>1. IDENTIFICACIÓN DEL RESPONSABLE</h4>
+    privacy: {
+      title: "Política de Privacidad",
+      html: `<h4>1. IDENTIFICACIÓN DEL RESPONSABLE</h4>
       <p><strong>LOEKEMEYER SRL</strong><br>
       Correo electrónico: <a href="mailto:ventas@loekemeyer.com">ventas@loekemeyer.com</a><br>
       Teléfono: <a href="tel:+5491131181021">+54 9 11 3118 1021</a><br>
@@ -133,14 +153,11 @@ function initLegalModals(){
       <hr>
 
       <h4>9. MODIFICACIONES</h4>
-      <p><strong>LOEKEMEYER SRL</strong> podrá modificar la presente política en cualquier momento, publicando la versión actualizada en el sitio web.</p>
-    `
-  },
-
-  terms: {
-    title: "Términos y Condiciones de Uso",
-    html: `
-      <p>Última actualización: <em>20/02/2026</em></p>
+      <p><strong>LOEKEMEYER SRL</strong> podrá modificar la presente política en cualquier momento, publicando la versión actualizada en el sitio web.</p>`
+    },
+    terms: {
+      title: "Términos y Condiciones",
+      html: `<p> Última actualización: <em>20/02/2026</em></p>
 
       <hr>
 
@@ -218,12 +235,11 @@ function initLegalModals(){
       <hr>
 
       <h4>9. JURISDICCIÓN</h4>
-      <p>Se aplicarán las leyes de la República Argentina. Cualquier controversia será resuelta ante los tribunales ordinarios competentes.</p>
-    `
-  }
-};
+      <p>Se aplicarán las leyes de la República Argentina. Cualquier controversia será resuelta ante los tribunales ordinarios competentes.</p>`
+    }
+  };
 
-  function openModal(key){
+  function openModal(key) {
     const data = CONTENT[key];
     if (!data) return;
 
@@ -235,70 +251,32 @@ function initLegalModals(){
     document.body.style.overflow = "hidden";
   }
 
-  function closeModal(){
+  function closeModal() {
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
   }
 
-  document.querySelectorAll(".footer-link[data-modal]").forEach(a => {
+  // Links del footer
+  document.querySelectorAll(".footer-link[data-modal]").forEach((a) => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
       openModal(a.dataset.modal);
     });
   });
 
+  // Cerrar
   closeBtn?.addEventListener("click", closeModal);
+
+  // Click fuera (backdrop)
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeModal();
   });
+
+  // Escape
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && modal.classList.contains("open")) closeModal();
   });
 }
 
 document.addEventListener("DOMContentLoaded", initLegalModals);
-
-// carrusel 
-
-function initClientesLoopSpeed(){
-  const track = document.querySelector(".clientes-track");
-  if (!track) return;
-
-  // Velocidad objetivo: px/seg (bajá este número = más lento)
-  const PX_PER_SEC = 25; // probá 18–30
-
-  const compute = () => {
-    // Como duplicaste el set, el loop recorre la mitad del track
-    const distance = track.scrollWidth / 2;
-    const durationSec = Math.max(20, distance / PX_PER_SEC);
-
-    track.style.setProperty("--clientes-duration", `${durationSec}s`);
-  };
-
-  // Esperar a que carguen imágenes para medir bien
-  const imgs = Array.from(track.querySelectorAll("img"));
-  let pending = imgs.length;
-
-  const done = () => {
-    pending--;
-    if (pending <= 0) compute();
-  };
-
-  if (pending === 0) compute();
-  imgs.forEach(img => {
-    if (img.complete) return done();
-    img.addEventListener("load", done, { once: true });
-    img.addEventListener("error", done, { once: true });
-  });
-
-  window.addEventListener("resize", () => {
-    clearTimeout(window.__clientesLoopT);
-    window.__clientesLoopT = setTimeout(compute, 120);
-  });
-}
-
-document.addEventListener("DOMContentLoaded", initClientesLoopSpeed);
-
-
-

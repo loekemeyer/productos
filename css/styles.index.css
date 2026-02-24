@@ -23,7 +23,7 @@ img{max-width:100%;display:block}
   position: relative;
   height: 65vh;              /* ← proporción más equilibrada */
   min-height: 480px;         /* evita que quede muy chico en pantallas bajas */
-  background: url("../gif/bg2.gif") center center / cover no-repeat;
+  background: url("../gif/bg.gif") center center / cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,40 +78,17 @@ img{max-width:100%;display:block}
 /* Sobre nosotros */
 .about{
   display: flex;
-  align-items: center;
-  gap: 60px;
-}
-
-.about .img{
-  flex: 1;
-}
-
-.about .img img{
-  width: 100%;
-  border-radius: 16px;
-  display: block;
+  justify-content: center;
+  text-align: center;
 }
 
 .about-text{
-  flex: 1;
+  max-width: 780px;
 }
 
-.about-text h2{
-  margin-bottom: 20px;
-}
-
-.about-text p{
-  margin-bottom: 16px;
-  line-height: 1.7;
-  color: #444;
-}
-
-@media (max-width: 900px){
-  .about{
-    flex-direction: column;
-    text-align: center;
-  }
-}
+.about h2{font-size:38px;margin-bottom:20px}
+.about p{font-size:16px;line-height:1.8;color:#333}
+.about .img img{border-radius:16px;box-shadow:var(--shadow)}
 
 /* Destacados */
 
@@ -614,21 +591,13 @@ footer{
   mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
 }
 
-.clientes-track img{
-  height: 81px;   /* 50% más grande */
-  object-fit: contain;
-  opacity: .72;
-  filter: grayscale(100%) contrast(1.1);
-  transition: transform .22s ease, opacity .22s ease, filter .22s ease;
-}
-
 .clientes-track{
   display: flex;
   align-items: center;
   gap: 72px;
   width: max-content;
   padding: 10px 0;
-  animation: clientesLoop 64s linear infinite;
+  animation: clientesLoop 32s linear infinite;
   will-change: transform;
 }
 
@@ -637,6 +606,14 @@ footer{
   to   { transform: translateX(-50%); } /* porque duplicamos el set */
 }
 
+/* B/N + hover visible sin color */
+.clientes-track img{
+  height: 81px;   /* 50% más grande */
+  object-fit: contain;
+  opacity: .72;
+  filter: grayscale(100%) contrast(1.1);
+  transition: transform .22s ease, opacity .22s ease, filter .22s ease;
+}
 
 .clientes-track img:hover{
   opacity: 1;
@@ -649,19 +626,5 @@ footer{
   animation-play-state: paused;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+.modal-backdrop { display:none; }
+.modal-backdrop.open { display:flex; }
