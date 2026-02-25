@@ -14,13 +14,36 @@
     <!-- ================= HOME PUBLICA ================= -->
     <section class="hero">
   <div class="hero-video" aria-hidden="true">
-    <iframe
-      src="https://www.youtube.com/embed/2oCpOZY1ggk?autoplay=1&mute=1&controls=0&loop=1&playlist=2oCpOZY1ggk&rel=0&playsinline=1&modestbranding=1"
-      frameborder="0"
-      allow="autoplay; fullscreen"
-      allowfullscreen>
-    </iframe>
-  </div>
+        <div class="hero-video">
+          <video
+            autoplay
+            loop
+            muted
+            playsinline
+            preload="auto"
+            class="bg-video"
+          >
+            <!-- Mobile (hasta 600px) -->
+            <source
+              src="./img/video_mobile.mp4"
+              type="video/mp4"
+              media="(max-width: 600px)"
+            />
+
+            <!-- Tablet (601 a 1024px) -->
+            <source
+              src="./img/video_tablet.mp4"
+              type="video/mp4"
+              media="(min-width: 601px) and (max-width: 1024px)"
+            />
+
+            <!-- Desktop (default) -->
+            <source src="./img/video_web.mp4" type="video/mp4" />
+
+            Tu navegador no soporta video HTML5.
+          </video>
+        </div>
+      </div>
 
   <div class="hero-overlay"></div>
 
@@ -551,3 +574,4 @@
     </div>
   </body>
 </html>
+
