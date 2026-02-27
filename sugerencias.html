@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sugerencias por IA · Loekemeyer SRL</title>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+
+    <!-- tu css -->
+    <link rel="stylesheet" href="css/sugerencias.css" />
+    <link rel="icon" type="image/jpeg" href="img/favicon.png">
+    <link rel="icon" href="img/favicon.png">
+    <link rel="shortcut icon" href="img/favicon.png">
+  </head>
+  </head>
+
+  <body>
+    <div class="card">
+      <div class="header">
+        <div>
+          <h1>Sugerencias de Compra</h1>
+          <div id="cliente" class="muted">Cliente: —</div>
+        </div>
+
+        <div class="actions">
+<button id="btnVolver" type="button" class="subtle">← Volver a productos</button>          <button id="btnReload" type="button">Recargar</button>
+        </div>
+      </div>
+
+      <div id="status" class="muted">Cargando…</div>
+
+      <div class="tableWrap">
+        <table id="tablaSug" style="display: none">
+          <thead id="theadSug"></thead>
+          <tbody id="tbodySug"></tbody>
+        </table>
+      </div>
+
+      <div class="moreWrap">
+        <button id="btnMoreSug" type="button" class="hidden">Ver más</button>
+        <button id="btnLessSug" type="button" class="hidden">Ver menos</button>
+      </div>
+    </div>
+
+    <script src="./sugerencias.js?v=1"></script>
+  </body>
+</html>

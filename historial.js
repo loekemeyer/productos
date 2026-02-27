@@ -5,6 +5,81 @@ const SUPABASE_ANON_KEY =
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ================= IMÁGENES =================
+const BASE_IMG = `${SUPABASE_URL}/storage/v1/object/public/products-images/`;
+const IMG_VERSION = "1";
+
+function imgUrlByCod(cod) {
+  const c = String(cod || "").trim();
+  if (!c) return "img/no-image.jpg";
+  return `${BASE_IMG}${encodeURIComponent(c)}.jpg?v=${encodeURIComponent(IMG_VERSION)}`;
+}
+
+// ================= CARRITO (shared con mayorista/sugerencias) =================
+const CART_LS_KEY = "lk_mayorista_cart_v1";
+
+function readCartLS() {
+  try {
+    const raw = localStorage.getItem(CART_LS_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCartLS(arr) {
+  try {
+    localStorage.setItem(CART_LS_KEY, JSON.stringify(arr));
+  } catch {}
+}
+
+function addToCartLS(productId, qtyCajas) {
+  const pid = String(productId || "").trim();
+  const q = Math.max(1, parseInt(qtyCajas, 10) || 1);
+  if (!pid) return;
+
+  const cart = readCartLS();
+  const found = cart.find((x) => String(x.productId) === pid);
+
+  if (found)
+    found.qtyCajas = Math.max(1, (parseInt(found.qtyCajas, 10) || 0) + q);
+  else cart.push({ productId: pid, qtyCajas: q });
+
+  writeCartLS(cart);
+}
+
+// handlers globales para botones inline
+window.hDec = function (pid) {
+  const el = document.getElementById(`hqty-${pid}`);
+  if (!el) return;
+  el.value = Math.max(1, (parseInt(el.value, 10) || 1) - 1);
+};
+
+window.hInc = function (pid) {
+  const el = document.getElementById(`hqty-${pid}`);
+  if (!el) return;
+  el.value = Math.max(1, (parseInt(el.value, 10) || 1) + 1);
+};
+
+window.hAdd = function (pid) {
+  const el = document.getElementById(`hqty-${pid}`);
+  const qty = el ? parseInt(el.value, 10) || 1 : 1;
+
+  addToCartLS(pid, qty);
+
+  const btn = document.getElementById(`hadd-${pid}`);
+  if (btn) {
+    const prev = btn.textContent;
+    btn.textContent = "Agregado ✓";
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = prev;
+      btn.disabled = false;
+    }, 900);
+  }
+};
+
 // helpers
 const $ = (id) => document.getElementById(id);
 const statusBox = $("status");
@@ -48,22 +123,31 @@ async function getCliente(session) {
     return null;
   }
   if (!data) {
-    setStatus("No se encontró tu cliente asociado. (falta vincular auth_user_id)");
+    setStatus(
+      "No se encontró tu cliente asociado. (falta vincular auth_user_id)",
+    );
     return null;
   }
   return data;
 }
 
 /**
- * IMPORTANTE
- * Este endpoint debe existir en Supabase:
+ * IMPORTANTE:
+ * Esta vista debe existir:
  *   public.v_customer_item_month
- * y debe estar agregado por mes (ym = 'YYYY-MM') y por item_code.
+ * con columnas: customer_code, ym (YYYY-MM), item_code, description, boxes
+ *
+ * FIX CLAVE:
+ * Filtramos por customer_code acá para evitar que una view que NO respeta RLS
+ * mezcle clientes y te infle totales.
  */
-async function getHistory() {
+async function getHistory(codCliente) {
+  const cc = String(codCliente).trim();
+
   const { data, error } = await sb
     .from("v_customer_item_month")
-    .select("ym, item_code, description, boxes")
+    .select("customer_code, ym, item_code, description, boxes")
+    .eq("customer_code", cc) // ✅ evita mezcla de clientes
     .order("ym", { ascending: false });
 
   if (error) {
@@ -90,10 +174,12 @@ function renderTabla(rows) {
   }
 
   // Orden: más reciente a la izquierda (DESC)
-  const meses = Array.from(mesesSet).sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
-  const meses60 = meses.slice(0, 60); // si hay 60 meses, muestra 60
+  const meses = Array.from(mesesSet).sort((a, b) =>
+    a < b ? 1 : a > b ? -1 : 0,
+  );
+  const meses60 = meses.slice(0, 60);
 
-  // 2) Agrupar por item_code y sumar cajas por mes (por si viniera repetido)
+  // 2) Agrupar por item_code y sumar cajas por mes
   const map = {};
   for (const r of rows) {
     const item = (r.item_code || "").trim();
@@ -125,7 +211,7 @@ function renderTabla(rows) {
   thead.innerHTML = "";
   const trh = document.createElement("tr");
 
-  ["Código", "Descripción", "Total"].forEach((t) => {
+  ["Img", "Código", "Descripción", "Total", "Pedido"].forEach((t) => {
     const th = document.createElement("th");
     th.innerText = t;
     trh.appendChild(th);
@@ -155,6 +241,18 @@ function renderTabla(rows) {
   for (const p of arr) {
     const tr = document.createElement("tr");
 
+    const tdImg = document.createElement("td");
+    tdImg.className = "imgcell";
+    tdImg.innerHTML = `
+  <img
+    class="h-img"
+    src="${imgUrlByCod(p.cod)}"
+    alt="${String(p.desc || "")}"
+    onerror="this.onerror=null;this.src='img/no-image.jpg'"
+  />
+`;
+    tr.appendChild(tdImg);
+
     const tdCod = document.createElement("td");
     tdCod.innerText = p.cod;
     tr.appendChild(tdCod);
@@ -167,6 +265,24 @@ function renderTabla(rows) {
     const tdTotal = document.createElement("td");
     tdTotal.innerText = p.total;
     tr.appendChild(tdTotal);
+
+    // ✅ Pedido (usa COD, no productId)
+    const cod = String(p.cod);
+    const tdPedido = document.createElement("td");
+    tdPedido.className = "pedido-td";
+    tdPedido.innerHTML = `
+      <div class="h-action">
+        <div class="h-stepper">
+          <button type="button" class="h-step-btn" onclick="hDec('${cod}')">−</button>
+          <input id="hqty-${cod}" class="h-step-in" type="number" min="1" value="1" />
+          <button type="button" class="h-step-btn" onclick="hInc('${cod}')">+</button>
+        </div>
+        <button type="button" class="h-add-btn" id="hadd-${cod}" onclick="hAdd('${cod}')">
+          Agregar
+        </button>
+      </div>
+    `;
+    tr.appendChild(tdPedido);
 
     meses60.forEach((ym) => {
       const td = document.createElement("td");
@@ -196,14 +312,69 @@ async function init() {
     const cliente = await getCliente(session);
     if (!cliente) return;
 
-    $("cliente").innerText = `Cliente: ${cliente.business_name} (${cliente.cod_cliente})`;
+    $("cliente").innerText =
+      `Cliente: ${cliente.business_name} (${cliente.cod_cliente})`;
 
-    const rows = await getHistory();
-    renderTabla(rows);
+    const rows = await getHistory(cliente.cod_cliente); // ✅ pasa codCliente
+    await renderTabla(rows);
   } catch (e) {
     console.error("Init crash:", e);
     setStatus("Error inesperado cargando historial. Ver consola.");
   }
 }
+// ====== Cola de agregados desde Historial (por COD) ======
+const HISTORY_PENDING_KEY = "lk_pending_adds_cod_v1";
+
+function readPendingAdds() {
+  try {
+    const raw = localStorage.getItem(HISTORY_PENDING_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePendingAdds(arr) {
+  try {
+    localStorage.setItem(HISTORY_PENDING_KEY, JSON.stringify(arr));
+  } catch {}
+}
+
+window.hDec = function (cod) {
+  const el = document.getElementById(`hqty-${cod}`);
+  if (!el) return;
+  el.value = Math.max(1, (parseInt(el.value, 10) || 1) - 1);
+};
+
+window.hInc = function (cod) {
+  const el = document.getElementById(`hqty-${cod}`);
+  if (!el) return;
+  el.value = Math.max(1, (parseInt(el.value, 10) || 1) + 1);
+};
+
+window.hAdd = function (cod) {
+  const el = document.getElementById(`hqty-${cod}`);
+  const qty = el ? Math.max(1, parseInt(el.value, 10) || 1) : 1;
+
+  const list = readPendingAdds();
+  const found = list.find((x) => String(x.cod) === String(cod));
+
+  if (found) found.qty = (parseInt(found.qty, 10) || 0) + qty;
+  else list.push({ cod: String(cod), qty });
+
+  writePendingAdds(list);
+
+  const btn = document.getElementById(`hadd-${cod}`);
+  if (btn) {
+    const prev = btn.textContent;
+    btn.textContent = "Agregado ✓";
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = prev;
+      btn.disabled = false;
+    }, 900);
+  }
+};
 
 document.addEventListener("DOMContentLoaded", init);

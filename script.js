@@ -21,9 +21,9 @@ const SHEETS_PROXY_URL =
 /***********************
  * UI CONSTANTS
  ***********************/
-const WEB_ORDER_DISCOUNT = 0.025; // 2.5% siempre
+const WEB_ORDER_DISCOUNT = 0.02; // 2% siempre
 const BASE_IMG = `${SUPABASE_URL}/storage/v1/object/public/products-images/`;
-const IMG_VERSION = "2026-02-20-2"; // cambiá esto cuando actualices imágenes
+const IMG_VERSION = "2026-02-27-2"; // cambiá esto cuando actualices imágenes
 
 /***********************
  * ORDEN FIJO (como pediste)
@@ -454,6 +454,8 @@ function getPaymentMethodCode() {
   if (txt.includes("46") || txt.includes("60")) return 11;
   if (txt.includes("90")) return 12;
   if (txt.includes("120")) return 13;
+  if (txt.includes("prefiero no decidir") || txt.includes("no decidir ahora"))
+    return 18;
 
   return 0; // desconocido
 }
@@ -489,9 +491,7 @@ async function loadProductsFromDB() {
     // Público: intenta RPC
     const { data, error } = await supabaseClient.rpc(
       "get_products_public_sorted",
-      {
-        sort_mode: sortMode,
-      },
+      { sort_mode: sortMode },
     );
 
     if (!error && Array.isArray(data) && data.length) {
@@ -510,6 +510,10 @@ async function loadProductsFromDB() {
         list_price: p.list_price,
         uxb: p.uxb,
         images: Array.isArray(p.images) ? p.images : [],
+        // ✅ Nuevo parámetro (si el RPC todavía no lo devuelve, queda null)
+        badge_status: p.badge_status
+          ? String(p.badge_status).trim().toUpperCase()
+          : null,
       }));
       return;
     }
@@ -521,7 +525,7 @@ async function loadProductsFromDB() {
     const { data: rows, error: err2 } = await supabaseClient
       .from("products")
       .select(
-        "id,cod,category,subcategory,ranking,orden_catalogo,description,list_price,uxb,images",
+        "id,cod,category,subcategory,ranking,orden_catalogo,description,list_price,uxb,images,badge_status",
       )
       .eq("active", true);
 
@@ -545,16 +549,20 @@ async function loadProductsFromDB() {
       list_price: p.list_price,
       uxb: p.uxb,
       images: Array.isArray(p.images) ? p.images : [],
+      // ✅ Nuevo parámetro
+      badge_status: p.badge_status
+        ? String(p.badge_status).trim().toUpperCase()
+        : null,
     }));
 
     return;
   }
 
-  // ✅ LOGUEADO: orden también según sortMode (para que no “parezca” que no ordena)
+  // ✅ LOGUEADO: orden también según sortMode
   let q = supabaseClient
     .from("products")
     .select(
-      "id,cod,category,subcategory,ranking,orden_catalogo,description,list_price,uxb,images,active",
+      "id,cod,category,subcategory,ranking,orden_catalogo,description,list_price,uxb,images,badge_status,active",
     )
     .eq("active", true);
 
@@ -569,7 +577,6 @@ async function loadProductsFromDB() {
     q = q.order("list_price", { ascending: true, nullsFirst: false });
     q = q.order("orden_catalogo", { ascending: true, nullsFirst: false });
   } else {
-    // category (como lo tenías)
     q = q.order("category", { ascending: true });
     q = q.order("orden_catalogo", { ascending: true, nullsFirst: false });
     q = q.order("description", { ascending: true });
@@ -605,6 +612,10 @@ async function loadProductsFromDB() {
     list_price: p.list_price,
     uxb: p.uxb,
     images: Array.isArray(p.images) ? p.images : [],
+    // ✅ Nuevo parámetro
+    badge_status: p.badge_status
+      ? String(p.badge_status).trim().toUpperCase()
+      : null,
     active: !!p.active,
   }));
 }
@@ -614,7 +625,7 @@ async function loadProductsFromDB() {
  ***********************/
 function getOrderedCategoriesFrom(list) {
   const presentCats = new Set(
-    list.map((p) => String(p.category || "").trim()).filter(Boolean),
+    (list || []).map((p) => String(p.category || "").trim()).filter(Boolean),
   );
 
   const inOrder = CATEGORY_ORDER.filter((cat) => presentCats.has(cat));
@@ -623,6 +634,7 @@ function getOrderedCategoriesFrom(list) {
     .filter((cat) => !CATEGORY_ORDER.includes(cat))
     .sort((a, b) => a.localeCompare(b, "es"));
 
+  // devuelve un array plano, en el orden correcto
   return [...inOrder, ...extras];
 }
 
@@ -1249,9 +1261,9 @@ function getFilteredProducts() {
   if (filterNewOnly) {
     list = list.filter(
       (p) =>
-        p.ranking === null ||
-        p.ranking === undefined ||
-        String(p.ranking).trim() === "",
+        String(p.badge_status || "")
+          .trim()
+          .toUpperCase() === "NUEVO",
     );
   }
 
@@ -1300,15 +1312,24 @@ function renderProducts() {
 
     // ✅ Nuevo: Tu Precio Contado (para mostrar en card)
     // unitYourPrice(list_price) = (Precio Lista - Dto Vol)
-    // Luego aplicamos -2.5% web y -25% contado
+    // Luego aplicamos -2% web y -25% contado
     const tuPrecioContado = logged
       ? tuPrecio * (1 - WEB_ORDER_DISCOUNT) * (1 - 0.25)
       : 0;
 
-    const isNuevo =
-      p.ranking === null ||
-      p.ranking === undefined ||
-      String(p.ranking).trim() === "";
+    const badge = String(p.badge_status || "")
+      .trim()
+      .toUpperCase();
+
+    let badgeHtml = "";
+
+    if (badge === "NUEVO") {
+      badgeHtml = '<div class="badge-nuevo">NUEVO</div>';
+    } else if (badge === "LIQUIDACION" || badge === "LIQUIDACIÓN") {
+      badgeHtml = '<div class="badge-liquidacion">LIQUIDACIÓN</div>';
+    } else if (badge === "SIN STOCK") {
+      badgeHtml = '<div class="badge-sinstock">SIN STOCK</div>';
+    }
 
     const inCart = cart.find((i) => String(i.productId) === String(pid));
     const qty = inCart ? Number(inCart.qtyCajas || 0) : 0;
@@ -1316,8 +1337,7 @@ function renderProducts() {
 
     return `
       <div class="product-card" id="card-${pid}">
-        ${isNuevo ? '<div class="badge-nuevo">NUEVO</div>' : ""}
-
+      ${badgeHtml}
         <img
           id="img-${pid}"
           src="${imgSrc}"
@@ -1349,29 +1369,33 @@ function renderProducts() {
         </div>
 
         ${
-          qty <= 0
+          badge === "SIN STOCK"
             ? `
-              <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
-                Agregar al pedido
-              </button>
-            `
-            : `
-              <div class="card-cartbar" id="qty-${pid}">
-                <div class="cartbar-top">
-                  <div class="cartbar-label">Subtotal</div>
-                  <div class="cartbar-subtotal">
-                    <strong class="cartbar-subv">
-                      $${formatMoney(
-                        logged
-                          ? unitYourPrice(p.list_price) *
-                              (qty * Number(p.uxb || 0))
-                          : 0,
-                      )}
-                    </strong>
-                    <span class="cartbar-iva">+ IVA</span>
-                  </div>
-                </div>
-
+      <button class="add-btn disabled" disabled>
+        Sin stock
+      </button>
+    `
+            : qty <= 0
+              ? `
+        <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
+          Agregar al pedido
+        </button>
+      `
+              : `
+        <div class="card-cartbar" id="qty-${pid}">
+          <div class="cartbar-top">
+            <div class="cartbar-label">Subtotal</div>
+            <div class="cartbar-subtotal">
+              <strong class="cartbar-subv">
+                $${formatMoney(
+                  logged
+                    ? unitYourPrice(p.list_price) * (qty * Number(p.uxb || 0))
+                    : 0,
+                )}
+              </strong>
+              <span class="cartbar-iva">+ IVA</span>
+            </div>
+          </div>
                 <div class="cartbar-controls">
                   <div class="cartbar-left">
                     <div class="cartbar-stepper">
@@ -1539,15 +1563,16 @@ function closeFiltersOverlay() {
 }
 
 function applyPendingFilters() {
-  filterAll = pendingFilterAll;
-  filterCats = new Set(pendingFilterCats);
-  filterAll = pendingFilterAll;
+  filterAll = !!pendingFilterAll;
+  filterCats = new Set(Array.from(pendingFilterCats || []));
+  filterNewOnly = !!pendingFilterNewOnly;
 
-  renderCategoriesMenu();
-  renderCategoriesSidebar();
-  renderProducts();
+  // UI sync del botón NUEVOS desktop (si existe)
+  const b = $("btnFilterNew");
+  if (b) b.classList.toggle("on", !!filterNewOnly);
 
   closeFiltersOverlay();
+  renderProducts();
 }
 
 function cancelPendingFilters() {
@@ -1566,7 +1591,7 @@ function renderFiltersOverlayUI() {
       Todos los artículos
     </button>
 
-    <button type="button" class="mf-btn ${pendingFilterNewOnly ? "on" : ""}" data-new="1">
+    <button type="button" class="mf-btn mf-btn2 ${pendingFilterNewOnly ? "on" : ""}" data-new="1">
     NUEVOS
   </button>
 
@@ -1757,6 +1782,40 @@ function scheduleViewOrderToastAfterAdd() {
 /***********************
  * CART
  ***********************/
+// ==============================
+// CART (persistencia entre páginas)
+// ==============================
+const CART_LS_KEY = "lk_mayorista_cart_v1";
+
+function loadCartFromLS() {
+  try {
+    const raw = localStorage.getItem(CART_LS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return [];
+    // normaliza
+    return arr
+      .map((x) => ({
+        productId: String(x.productId),
+        qtyCajas: Math.max(1, parseInt(x.qtyCajas, 10) || 1),
+      }))
+      .filter((x) => x.productId);
+  } catch {
+    return [];
+  }
+}
+
+function saveCartToLS() {
+  try {
+    // guardamos SOLO lo mínimo
+    const payload = cart.map((x) => ({
+      productId: String(x.productId),
+      qtyCajas: Math.max(1, parseInt(x.qtyCajas, 10) || 1),
+    }));
+    localStorage.setItem(CART_LS_KEY, JSON.stringify(payload));
+  } catch {}
+}
+
 function addFirstBox(productId) {
   if (!currentSession) {
     openLogin();
@@ -1988,6 +2047,9 @@ function updateCart() {
       setOrderStatus("");
     }
   }
+
+  // ✅ persiste carrito para otras páginas (sugerencias, historial, etc.)
+  saveCartToLS();
 }
 
 /***********************
@@ -2301,6 +2363,11 @@ function closePassModal() {
  ***********************/
 document.addEventListener("DOMContentLoaded", async () => {
   // Exponer funciones al HTML (onclick)
+  // ✅ recuperar carrito guardado (si venís de sugerencias, etc.)
+  const saved = loadCartFromLS();
+  if (saved.length) {
+    cart.splice(0, cart.length, ...saved);
+  }
   window.showSection = showSection;
   window.goToProductsTop = goToProductsTop;
   window.openLogin = openLogin;
@@ -2560,8 +2627,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("paymentButtons")?.addEventListener("click", (e) => {
     const btn = e.target.closest(".pay-btn");
     if (!btn) return;
-    if (btn.id === "payLaterBtn") return;
 
+    // ✅ Si clickea "Prefiero no decidir ahora", lo tratamos como método válido
+    if (btn.id === "payLaterBtn") {
+      const ps = $("paymentSelect");
+      if (ps) ps.value = "LATER";
+
+      document
+        .querySelectorAll("#paymentButtons .pay-btn")
+        .forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+
+      updateCart();
+      refreshSubmitEnabled();
+      return;
+    }
+
+    // ✅ Resto de botones normales (con descuento)
     setPaymentByValue(btn.dataset.value);
 
     document
@@ -2569,11 +2651,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       .forEach((b) => b.classList.remove("selected"));
     btn.classList.add("selected");
     $("payLaterBtn")?.classList.remove("selected");
+
+    updateCart();
+    refreshSubmitEnabled();
   });
 
   $("payLaterBtn")?.addEventListener("click", () => {
+    // ✅ Igual que arriba: setea una opción real
     const ps = $("paymentSelect");
-    if (ps) ps.value = "";
+    if (ps) ps.value = "LATER";
 
     document
       .querySelectorAll("#paymentButtons .pay-btn")
@@ -2581,6 +2667,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     $("payLaterBtn")?.classList.add("selected");
 
     updateCart();
+    refreshSubmitEnabled();
   });
 
   // Pago (select)
@@ -2672,6 +2759,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // Buscador Mobile
+  const mobileSearch = $("mobileSearch");
+  if (mobileSearch) {
+    mobileSearch.addEventListener("input", () => {
+      searchTerm = String(mobileSearch.value || "").trim();
+      renderProducts();
+    });
+  }
+
   // Mobile filtros overlay
   $("openFiltersBtn")?.addEventListener("click", () => openFiltersOverlay());
   $("filtersCancelBtn")?.addEventListener("click", () =>
@@ -2700,15 +2796,50 @@ document.addEventListener("DOMContentLoaded", async () => {
       .limit(20);
 
     console.log("HISTORIAL TEST:", {
-  error: histError,
-  rows: histData?.length,
-  sample: histData?.[0],
-  keys: histData?.[0] ? Object.keys(histData[0]) : []
-
+      error: histError,
+      rows: histData?.length,
+      sample: histData?.[0],
+      keys: histData?.[0] ? Object.keys(histData[0]) : [],
     });
     window.__histSample = histData?.[0] || null;
   }
   await loadProductsFromDB();
+
+  await loadProductsFromDB();
+
+  // =============================
+  // ✅ Importar agregados desde HISTORIAL
+  // =============================
+  (function importFromHistoryIfAny() {
+    const HISTORY_PENDING_KEY = "lk_pending_adds_cod_v1";
+    try {
+      const raw = localStorage.getItem(HISTORY_PENDING_KEY);
+      if (!raw) return;
+
+      const list = JSON.parse(raw);
+      if (!Array.isArray(list) || !list.length) return;
+
+      list.forEach(({ cod, qty }) => {
+        const c = String(cod || "").trim();
+        const q = Math.max(1, parseInt(qty, 10) || 1);
+        if (!c) return;
+
+        const prod = products.find((p) => String(p.cod) === c);
+        if (!prod) return;
+
+        const found = cart.find(
+          (ci) => String(ci.productId) === String(prod.id),
+        );
+
+        if (found) found.qtyCajas += q;
+        else cart.push({ productId: String(prod.id), qtyCajas: q });
+      });
+
+      localStorage.removeItem(HISTORY_PENDING_KEY);
+    } catch (e) {
+      console.warn("Import history failed:", e);
+    }
+  })();
 
   renderCategoriesMenu();
   renderCategoriesSidebar();
@@ -2739,7 +2870,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function getCodClienteForHistorial() {
-  const dom = (document.getElementById("pfCodCliente")?.textContent || "").trim();
+  const dom = (
+    document.getElementById("pfCodCliente")?.textContent || ""
+  ).trim();
 
   const ls =
     localStorage.getItem("cod_cliente") ||
@@ -2749,7 +2882,7 @@ function getCodClienteForHistorial() {
     localStorage.getItem("customer_id") ||
     "";
 
-  const v = (dom && dom !== "—" ? dom : (ls || "")).trim();
+  const v = (dom && dom !== "—" ? dom : ls || "").trim();
   return v && v !== "—" ? v : "";
 }
 
@@ -2800,10 +2933,11 @@ function getCodClienteFromProfileOrStorage() {
 
 function abrirHistorial() {
   const path = window.location.pathname;
-  const base =
-    path.includes("/productos-main/") ? "/productos-main/" :
-    path.includes("/productos/") ? "/productos/" :
-    "/";
+  const base = path.includes("/productos-main/")
+    ? "/productos-main/"
+    : path.includes("/productos/")
+      ? "/productos/"
+      : "/";
 
   window.location.href = base + "historial.html";
 }

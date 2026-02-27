@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Loekemeyer</title>
+    <title>Mayorista · Loekemeyer SRL</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" type="image/jpeg" href="img/favicon.png">
@@ -47,7 +47,7 @@
           <a onclick="goToProductsTop()">Productos</a>
 
           <a id="cartLink" onclick="showSection('carrito')">
-            <img id="cartIcon" class="cart-icon" src="img/cart-icon.webp" alt="Carrito">
+            <img id="cartIcon" class="cart-icon" src="img/cart-icon.png" alt="Carrito">
             Pedido (<span id="cartCount">0</span>)
           </a>
         </div>
@@ -55,7 +55,7 @@
         <!-- ✅ MOBILE ICONS: Carrito + Perfil -->
         <div id="mobileIcons" class="mobile-icons" aria-label="Accesos rápidos">
           <button id="mobileCartBtn" class="micon-btn micon-cart" type="button" aria-label="Pedido">
-            <img class="micon-cart-img" src="img/cart-icon.webp" alt="">
+            <img class="micon-cart-img" src="img/cart-icon.png" alt="">
             <span class="micon-cart-text">Pedido</span> (<span id="mobileCartCount">0</span>)
           </button>
 
@@ -93,11 +93,9 @@
     <button class="user-menu-item" type="button" onclick="openHistorialFromMenu('hist')">
   Historial de Compras
 </button>
-<button class="user-menu-item" type="button" onclick="openHistorialFromMenu('sug')">
+<button class="user-menu-item" type="button"
+  onclick="window.location.href='./sugerencias.html'">
   Sugerencia Compra x IA
-</button>
-<button class="user-menu-item" type="button" onclick="openHistorialFromMenu('nov')">
-  Novedades Sugeridas
 </button>
 
     <div class="user-menu-sep" role="separator" aria-hidden="true"></div>
@@ -113,16 +111,26 @@
     </header>
 
     <!-- ✅ MOBILE USER MENU -->
-    <div class="user-menu mobile-user-menu" id="mobileUserMenu" aria-hidden="true">
-      <button class="user-menu-item" type="button" onclick="openProfile(); closeMobileUserMenu();">
-        Mi perfil
-      </button>
-      
-      <div class="user-menu-sep" role="separator" aria-hidden="true"></div>
-      <button class="user-menu-item danger" type="button" onclick="logout(); closeMobileUserMenu();">
-        Cerrar sesión
-      </button>
-    </div>
+    <!-- ✅ MOBILE USER MENU -->
+<div class="user-menu mobile-user-menu" id="mobileUserMenu" aria-hidden="true">
+  <button class="user-menu-item" type="button" onclick="openProfile(); closeMobileUserMenu();">
+    Mi perfil
+  </button>
+
+  <button class="user-menu-item" type="button" onclick="openHistorialFromMenu('hist'); closeMobileUserMenu();">
+    Historial de Compras
+  </button>
+
+  <button class="user-menu-item" type="button" onclick="closeMobileUserMenu(); window.location.href='./sugerencias.html';">
+    Sugerencia Compra x IA
+  </button>
+
+  <div class="user-menu-sep" role="separator" aria-hidden="true"></div>
+
+  <button class="user-menu-item danger" type="button" onclick="logout(); closeMobileUserMenu();">
+    Cerrar sesión
+  </button>
+</div>
 
     <!-- PRODUCTOS -->
     <section id="productos" class="section active">
@@ -149,11 +157,6 @@
               <button type="button" class="ds-btn" data-sort="price_desc">Mayor a menor precio</button>
               <button type="button" class="ds-btn" data-sort="price_asc">Menor a mayor precio</button>
             </div>
-
-            <!-- MOBILE: Filtros -->
-            <button id="openFiltersBtn" class="filters-btn" type="button" aria-haspopup="dialog">
-              Filtros
-            </button>
 
             <!-- SELECT (Fallback) -->
             <div class="sort-wrap">
@@ -182,6 +185,61 @@
             </div>
           </div>
 
+          <!-- ================= MOBILE PRODUCTS BAR ================= -->
+           <div class="mobile-products-bar" id="mobileProductsBar">
+            <div class="mpb-search">
+              <span class="mpb-ico" aria-hidden="true">
+                
+      <!-- Search SVG -->
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M16.5 16.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </span>
+
+    <input
+      id="mobileSearch"
+      class="mpb-input"
+      type="search"
+      placeholder="Buscar…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+  </div>
+
+  <div class="mpb-actions">
+    <!-- ✅ IMPORTANTE: este ID debe ser EXACTO -->
+    <button id="openFiltersBtn" class="mpb-btn" type="button">
+      <span class="mpb-btn-ico" aria-hidden="true">
+        <!-- Filter SVG -->
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </span>
+      Filtros
+    </button>
+
+    <div class="mpb-sort">
+      <span class="mpb-btn-ico" aria-hidden="true">
+        <!-- Sort SVG -->
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 7h12M8 12h9M8 17h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M4 6v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M2.5 16.5 4 18l1.5-1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2.5 7.5 4 6l1.5 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+
+      <!-- (tu JS actual de ordenar ya lo tenés; este select funciona igual) -->
+      <select id="mobileSortSelect" class="mpb-select">
+        <option value="category">Categoría</option>
+        <option value="bestsellers">Más vendidos</option>
+        <option value="price_desc">Mayor precio</option>
+        <option value="price_asc">Menor precio</option>
+      </select>
+    </div>
+  </div>
+</div>
           <div id="productsContainer"></div>
         </main>
       </div>
@@ -370,20 +428,22 @@
           </button>
 
           <!-- Select oculto: arranca SIN selección -->
-          <select id="paymentSelect" onchange="updateCart()">
-            <option value="" selected>Elegir método de pago</option>
-            <option value="0.25">Pago Contado: 25% Dto</option>
-            <option value="0.20">Pago 15-30 días: 20% Dto</option>
-            <option value="0.15">Pago 31-45 días: 15% Dto</option>
-            <option value="0.10">Pago 46-60 días: 10% Dto</option>
-            <option value="0.05">Pago 90 días Echeq: 5% Dto</option>
-            <option value="0.00">Pago 120 días Echeq: 0% Dto</option>
-          </select>
+         <select id="paymentSelect" onchange="updateCart()">
+  <option value="" selected>Elegir método de pago</option>
+  <option value="LATER">Prefiero no decidir ahora: 0% Dto (nos avisás por otro medio)</option>
+
+  <option value="0.25">Pago Contado: 25% Dto</option>
+  <option value="0.20">Pago 15-30 días: 20% Dto</option>
+  <option value="0.15">Pago 31-45 días: 15% Dto</option>
+  <option value="0.10">Pago 46-60 días: 10% Dto</option>
+  <option value="0.05">Pago 90 días Echeq: 5% Dto</option>
+  <option value="0.00">Pago 120 días Echeq: 0% Dto</option>
+</select>
 
 
           <div class="web-note">
             <div class="web-note-title">Dto Pedido Web</div>
-            <div class="web-note-value"><strong>2.5%</strong> (aplicado)</div>
+            <div class="web-note-value"><strong>2%</strong> (aplicado)</div>
           </div>
 
           <div class="ship-hint">Seleccioná un método de pago para poder confirmar el pedido.</div>
@@ -403,7 +463,7 @@
             <strong>$<span id="subtotal">0</span></strong>
           </div>
           <div class="totals-line">
-            <span>Dto Pedido Web (2.5%):</span>
+            <span>Dto Pedido Web (2%):</span>
             <strong>− $<span id="webDiscountValue">0</span></strong>
           </div>
           <div class="totals-line">
@@ -500,15 +560,17 @@
 
           <p class="modal-hint">Los precios se muestran solo luego de iniciar sesión.</p>
 
+          <a id="ctaClienteModal" class="btn-quiero-cliente modal-cta" href="https://wa.me/541131181021?text=Quiero%20ser%20cliente" target="_blank" rel="noopener">Quiero ser cliente</a>
+
           <a
-            id="ctaClienteModal"
-            class="btn-quiero-cliente modal-cta"
-            href="https://wa.me/541131181021?text=Quiero%20ser%20cliente"
-            target="_blank"
-            rel="noopener"
-          >
-            Quiero ser cliente
-          </a>
+  class="login-help-btn"
+  href="https://wa.me/541131181021?text=Ya%20soy%20cliente%20y%20quiero%20saber%20mi%20contrase%C3%B1a"
+  target="_blank"
+  rel="noopener"
+>
+  Ya soy cliente y quiero saber mi contraseña
+</a>
+
         </div>
       </div> 
       </div>

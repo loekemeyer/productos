@@ -2,65 +2,26 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Historial de Compras</title>
+    <title>Historial de Compras · Loekemeyer SRL</title>
 
     <!-- Supabase UMD (SOLO UNA VEZ) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        background: #f4f4f4;
-        padding: 30px;
-        margin: 0;
-      }
-
-      .card {
-        background: white;
-        padding: 25px;
-        border-radius: 10px;
-        max-width: 1200px;
-        margin: auto;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      }
-
-      h1 {
-        margin: 0 0 10px;
-      }
-
-      #status {
-        margin-top: 10px;
-        font-size: 14px;
-        color: #666;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-      }
-
-      th {
-        background: #111827;
-        color: white;
-        padding: 10px;
-        font-size: 14px;
-      }
-
-      td {
-        padding: 8px;
-        border-bottom: 1px solid #ddd;
-        text-align: center;
-      }
-
-      td.desc {
-        text-align: left;
-      }
-    </style>
+    <link rel="stylesheet" href="css/historial.css" />
+    <link rel="icon" type="image/jpeg" href="img/favicon.png" />
+    <link rel="icon" href="img/favicon.png" />
+    <link rel="shortcut icon" href="img/favicon.png" />
   </head>
 
   <body>
     <div class="card">
+      <button
+        class="back-btn"
+        type="button"
+        onclick="window.location.href = 'mayorista.html'"
+      >
+        ← Volver a productos
+      </button>
+
       <h1>Historial de compras</h1>
       <div id="cliente"></div>
       <div id="status">Cargando...</div>
