@@ -17,12 +17,7 @@
 html,
 body {
   margin: 0;
-  font-family:
-    system-ui,
-    Segoe UI,
-    Roboto,
-    Arial,
-    sans-serif;
+  font-family:system-ui, -apple-system, Roboto, sans-serif;
   background: #fff;
   color: #111;
 }
@@ -516,7 +511,7 @@ footer {
   color: #fff;
   display: grid;
   place-items: center;
-  box-shadow: 0 12px 22px rgba(139, 30, 30, 0.28);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.2);
 }
 
 .contact-card h3 {
@@ -773,4 +768,56 @@ footer {
   padding: 20px;
   text-align: center;
   color: #fff;
+}
+
+.ig-widget-wrap {
+  width: 100%;
+  min-height: 420px; /* subilo si querés */
+}
+
+.ig-widget-wrap, .elfsight-app-0e78546a-4dca-44bc-970b-e412adb0e0ca {
+  position: relative;
+  z-index: 1;
+}
+
+.contact-cards{
+  display:grid;
+  gap:16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px){
+  .contact-cards{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px){
+  .contact-cards{ grid-template-columns: 1fr; }
+}
+
+.contact-cards{
+  display:grid;
+  gap:16px;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+@media (max-width: 900px){
+  .contact-cards{
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px){
+  .contact-cards{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ocultar marca Elfsight */
+.elfsight-app-8396906f-8926-464e-ba22-c59474cc0b6d a[href*="elfsight"]{
+  display:none !important;
+}
+
+/* Oculta cualquier branding de Elfsight */
+[class*="eapps-instagram-feed"] a[href*="elfsight"]{
+  display:none !important;
 }

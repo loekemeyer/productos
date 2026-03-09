@@ -5,7 +5,11 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    Roboto,
+    sans-serif;
 }
 html,
 body {
@@ -422,6 +426,19 @@ body {
   letter-spacing: 0.5px;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
 }
+
+.badge-liquidacion {
+  border: 2px solid #ff7a00;
+  color: #ff7a00;
+  background: rgba(255, 122, 0, 0.08);
+}
+
+.badge-sinstock {
+  border: 2px solid #777;
+  color: #555;
+  background: rgba(0, 0, 0, 0.06);
+}
+
 .product-info {
   margin: 10px 0;
   line-height: 1.35;
@@ -2564,35 +2581,6 @@ body {
   margin-bottom: 16px;
 }
 
-.section-header .back-btn {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.section-header .section-title {
-  text-align: center;
-}
-
-.back-btn {
-  background: #f5f5f5;
-  border: 1px solid #e2e2e2;
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.back-btn:hover {
-  background: #111;
-  color: #fff;
-  border-color: #111;
-  transform: translateY(-1px);
-}
-
 /* =========================
    ESPACIADO PERFIL / CARRITO
    ========================= */
@@ -3461,33 +3449,37 @@ body {
    (PEGAR AL FINAL DEL styles.css)
    ========================= */
 
-#perfil .section-header .section-title{
+#perfil .section-header .section-title {
   font-size: 30px;
   font-weight: 900;
   line-height: 1.15;
 }
 
-#perfil .profile-ra{
+#perfil .profile-ra {
   font-size: 28px;
   font-weight: 900;
   line-height: 1.2;
 }
 
-#perfil .profile-row.two{
-  font-size: 18px;          /* antes 14px */
+#perfil .profile-row.two {
+  font-size: 18px; /* antes 14px */
   line-height: 1.35;
-  gap: 34px;                /* un poco más de aire entre columnas */
+  gap: 34px; /* un poco más de aire entre columnas */
 }
 
-#perfil .profile-row.two b{
+#perfil .profile-row.two b {
   font-weight: 900;
 }
 
 /* Mobile: grande pero que entre bien */
-@media (max-width: 720px){
-  #perfil .section-header .section-title{ font-size: 26px; }
-  #perfil .profile-ra{ font-size: 22px; }
-  #perfil .profile-row.two{
+@media (max-width: 720px) {
+  #perfil .section-header .section-title {
+    font-size: 26px;
+  }
+  #perfil .profile-ra {
+    font-size: 22px;
+  }
+  #perfil .profile-row.two {
     font-size: 16px;
     flex-direction: column; /* evita que quede apretado */
     gap: 10px;
@@ -3499,34 +3491,40 @@ body {
    (pegalo al FINAL del styles.css)
    ========================================= */
 
-#perfil .section-header .section-title{
+#perfil .section-header .section-title {
   font-size: 30px !important;
   font-weight: 800 !important;
   margin: 0 !important;
 }
 
 /* Card blanca, sutil, premium */
-#perfil .profile-summary{
+#perfil .profile-summary {
   position: relative !important;
   background: #fff !important;
   border: 1px solid #e7e7ea !important;
   border-radius: 14px !important;
   padding: 18px !important;
-  box-shadow: 0 10px 24px rgba(0,0,0,.06) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06) !important;
   overflow: hidden !important;
 }
 
 /* acento mínimo arriba (sin despegarse del sitio) */
-#perfil .profile-summary::before{
-  content:"" !important;
-  position:absolute !important;
-  left:0 !important; top:0 !important; right:0 !important;
+#perfil .profile-summary::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
   height: 4px !important;
-  background: linear-gradient(90deg, rgba(0,0,0,.06), rgba(0,0,0,.02)) !important;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.06),
+    rgba(0, 0, 0, 0.02)
+  ) !important;
 }
 
 /* Razón social / nombre */
-#perfil .profile-ra{
+#perfil .profile-ra {
   font-size: 25px !important;
   font-weight: 800 !important;
   margin: 4px 0 14px 0 !important;
@@ -3534,7 +3532,7 @@ body {
 }
 
 /* Layout de datos: prolijo */
-#perfil .profile-row.two{
+#perfil .profile-row.two {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 10px 12px !important;
@@ -3543,17 +3541,19 @@ body {
 }
 
 /* Items: blanco/grey muy suave (sin “glass”) */
-#perfil .profile-row.two p{
+#perfil .profile-row.two p {
   margin: 0 !important;
   padding: 12px 12px !important;
   border-radius: 12px !important;
   background: #fafafa !important;
   border: 1px solid #ededf0 !important;
-  transition: border-color .15s ease, box-shadow .15s ease !important;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease !important;
 }
 
 /* Etiqueta */
-#perfil .profile-row.two p b{
+#perfil .profile-row.two p b {
   display: block !important;
   font-size: 12px !important;
   font-weight: 800 !important;
@@ -3562,40 +3562,719 @@ body {
 }
 
 /* Hover leve (solo un toque) */
-#perfil .profile-row.two p:hover{
+#perfil .profile-row.two p:hover {
   border-color: #dcdce1 !important;
-  box-shadow: 0 10px 18px rgba(0,0,0,.06) !important;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* Mobile */
-@media (max-width: 720px){
-  #perfil .section-header .section-title{ font-size: 20px !important; }
-  #perfil .profile-ra{ font-size: 17px !important; }
-  #perfil .profile-row.two{ grid-template-columns: 1fr !important; }
-}
-
-/* =====================================
-   BOTÓN "VOLVER A PRODUCTOS"
-   alineado con el container del nav
-   ===================================== */
-
-#volverProductos,
-.btn-volver,
-.back-btn {
-  margin-left: 45px !important; /* mismo padding que el nav */
-}
-
-/* si está dentro de un section sin container */
-.section > .back-btn,
-.section > #volverProductos {
-  margin-left: 24px !important;
-}
-
-/* mobile más compacto */
-@media (max-width: 720px){
-  #volverProductos,
-  .btn-volver,
-  .back-btn{
-    margin-left: 16px !important;
+@media (max-width: 720px) {
+  #perfil .section-header .section-title {
+    font-size: 20px !important;
   }
+  #perfil .profile-ra {
+    font-size: 17px !important;
+  }
+  #perfil .profile-row.two {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* =========================
+   HEADER CARRITO
+   ========================= */
+
+.section-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+  min-height: 56px;
+}
+
+/* Botón volver */
+.section-header .back-btn {
+  left: 16px;
+  background: #f5f5f5;
+  border: 1px solid #e2e2e2;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Hover */
+.section-header .back-btn:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* Título centrado real */
+.section-header .section-title {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 600;
+}
+
+/* ================= OVERLAY ================= */
+
+.filters-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 999;
+}
+
+.filters-overlay.open {
+  display: flex;
+}
+
+.filters-panel {
+  width: 100%;
+  max-height: 85%;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.filters-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.mf-btn {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #f7f7f7;
+}
+
+.mf-btn.on {
+  background: #111;
+  color: #fff;
+}
+
+.filters-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.filters-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+}
+
+.filters-btn.cancel {
+  background: #eee;
+}
+
+.filters-btn.apply {
+  background: #111;
+  color: #fff;
+}
+
+/* ===== MOBILE PRODUCTS BAR (PRO) ===== */
+.mobile-products-bar {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-products-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    border-bottom: 1px solid #eee;
+  }
+
+  .mpb-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e6e6e6;
+    background: #fafafa;
+    border-radius: 14px;
+    padding: 0 10px;
+    height: 44px;
+    min-width: 0;
+  }
+
+  .mpb-ico {
+    color: #666;
+    display: flex;
+  }
+  .mpb-input {
+    width: 100%;
+    height: 42px;
+    border: 0;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    min-width: 0;
+  }
+
+  .mpb-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .mpb-btn,
+  .mpb-select {
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid #e6e6e6;
+    background: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  .mpb-btn-ico {
+    display: flex;
+    color: #111;
+  }
+
+  .mpb-sort {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e6e6e6;
+    border-radius: 14px;
+    padding: 0 10px;
+    background: #fff;
+    height: 44px;
+  }
+  .mpb-select {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    height: 42px;
+    width: 100%;
+    font-weight: 700;
+    outline: none;
+  }
+}
+
+/* ===== FILTERS OVERLAY ===== */
+.filters-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  z-index: 9999;
+}
+
+.filters-overlay.open {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.filters-panel {
+  width: 100%;
+  max-height: 86vh;
+  background: #fff;
+  border-radius: 18px 18px 0 0;
+  padding: 14px 14px 16px;
+  overflow: auto;
+}
+
+.filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.filters-title {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.filters-x {
+  height: 40px;
+  width: 40px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.filters-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.mf-btn {
+  width: 100%;
+  text-align: left;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid #e6e6e6;
+  background: #fafafa;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mf-btn.on {
+  background: #111;
+  border-color: #111;
+  color: #fff;
+}
+
+.mf-btn2 {
+  width: 100%;
+  text-align: left;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 2px solid #ff0000;
+  background: #fafafa;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mf-btn2.on {
+  background: #ff0000;
+  border-color: #ff0000;
+  color: #fff;
+}
+
+.filters-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.filters-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 14px;
+  border: 0;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.filters-btn.cancel {
+  background: #efefef;
+}
+.filters-btn.apply {
+  background: #111;
+  color: #fff;
+}
+
+/* =========================
+   HEADER (CARRITO / PERFIL)
+   ========================= */
+
+.section-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto; /* btn | título | spacer */
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+/* Botón volver */
+.section-header .back-btn {
+  grid-column: 1;
+  justify-self: start;
+
+  background: #f5f5f5;
+  border: 1px solid #e2e2e2;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  /* clave: evitar que se estire y coma el título */
+  white-space: nowrap;
+}
+
+/* Hover */
+.section-header .back-btn:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* Título centrado sin ser tapado */
+.section-header .section-title {
+  grid-column: 2;
+  justify-self: center;
+  text-align: center;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+
+  /* clave: permitir que el título se achique y no empuje */
+  min-width: 0;
+}
+
+/* =========================
+   HEADER (VOLVER + TÍTULO)
+   ========================= */
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+/* Botón volver: arriba y alineado a la izquierda */
+.section-header .back-btn {
+  align-self: flex-start;
+
+  background: #f5f5f5;
+  border: 1px solid #e2e2e2;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  white-space: nowrap;
+}
+
+/* Hover */
+.section-header .back-btn:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* Título centrado abajo */
+.section-header .section-title {
+  margin: 0;
+  text-align: center;
+  font-size: 25px;
+  font-weight: 600;
+}
+
+.login-help-btn {
+  margin-top: 10px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.login-help-btn:hover {
+  color: #111;
+}
+
+.badge-nuevo,
+.badge-liquidacion,
+.badge-sinstock {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 7px 12px;
+  border-radius: 10px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Base común para TODOS los badges */
+.badge-nuevo,
+.badge-liquidacion,
+.badge-sinstock {
+  padding: 6px 10px;
+  line-height: 1;
+  z-index: 2;
+  border: 2px solid currentColor; /* mismo look que NUEVO */
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+/* NUEVO (tu rojo actual, ajustalo si ya existe) */
+.badge-nuevo {
+  color: #d60000;
+}
+
+/* SIN STOCK (gris) */
+.badge-sinstock {
+  color: #6b7280; /* gris moderno */
+}
+
+/* LIQUIDACIÓN (destaca sin “alerta” rojo) */
+.badge-liquidacion {
+  color: #f59e0b; /* ámbar/dorado: “promo” */
+}
+
+.add-btn.disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  border: 1px solid #ddd;
+}
+
+/* brillo deslizante */
+.badge-liquidacion::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 80%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  transform: skewX(-25deg);
+  animation: liquidShine 3s infinite;
+}
+
+@keyframes liquidShine {
+  0% {
+    left: -120%;
+  }
+  60% {
+    left: 120%;
+  }
+  100% {
+    left: 120%;
+  }
+}
+
+.login-help-btn{
+  display:block;
+  width:100%;
+  text-align:center;
+  margin-top:10px;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid #e6e6e6;
+  background:#fff;
+  color:#000000;
+  font-weight:700;
+  text-decoration:none;
+  font-size: 14px
+}
+
+.login-help-btn:hover{
+  background:#999999;
+  color:#fff;
+}
+
+/* ===== MOBILE PRODUCTS BAR (PRO) ===== */
+.mobile-products-bar{ display:none; }
+
+@media (max-width: 900px){
+  .mobile-products-bar{
+    display:grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 8px 10px;
+    padding: 8px 12px;            /* ✅ más arriba */
+    background:#fff;
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    border-bottom: 1px solid #eee;
+  }
+
+  /* Buscador a la izquierda y ocupa 2 filas */
+  .mpb-search{
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;              /* ✅ ocupa las dos filas */
+    position: relative;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding: 10px 12px;
+    border: 1px solid #e7e7e7;
+    border-radius: 12px;
+    background: #fafafa;
+  }
+
+  .mpb-input{
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+  }
+
+  /* A la derecha: filtros arriba, ordenar abajo */
+  .mpb-actions{
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+    display:grid;
+    grid-template-rows: auto auto;
+    gap: 8px;
+    align-content:start;
+  }
+
+  /* botón filtros */
+  #openFiltersBtn.mpb-btn{
+    width: 120px;
+    justify-content:center;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #e7e7e7;
+    background: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* ordenar (select) */
+  .mpb-sort{
+    width: 120px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #e7e7e7;
+    background: #fff;
+  }
+
+  .mpb-select{
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+}
+
+.add-login-btn{
+  background:#111;
+  color:#fff;
+  border:1px solid #111;
+    border-radius: 10px;
+}
+
+.add-login-btn:hover{
+  background:#333;
+}
+
+.add-btn{
+  background:#111;
+  color:#fff;
+  border:1px solid #111;
+  border-radius: 10px;
+}
+
+.add-btn:hover{
+  background:#333;
+}
+
+.pass-wrap{
+  position: relative;
+  width: 100%;
+}
+
+.pass-wrap input{
+  width: 100%;
+  padding-right: 44px; /* espacio para el botón */
+  box-sizing: border-box;
+}
+
+.toggle-pass{
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  cursor: pointer;
+  line-height: 0;
+  opacity: 0.75;
+}
+
+.toggle-pass:hover{ opacity: 1; }
+
+.toggle-pass svg{
+  width: 18px;
+  height: 18px;
+  fill: #111;
+  display: block;
+}
+
+/* Estado: oculto/visible */
+.toggle-pass .icon-hide{ display: none; }
+.toggle-pass[data-show="1"] .icon-show{ display: none; }
+.toggle-pass[data-show="1"] .icon-hide{ display: block; }
+
+/* Botón MI SURTIDO */
+.ds-assortment{
+  border: 3px solid #ffd700 !important;
+  font-size: 15px !important; 
+  font-weight: 600;
+  background: #fff;
+  position: relative;
+}
+
+/* estado activo */
+.ds-assortment.on{
+  background: #ffd700 !important;
+  color: #fff;
+  border-color: #ffd700 !important;
+}
+
+/* hover */
+.ds-assortment:hover{
+  background: #111;
+} 
+
+.assortment-banner{
+  grid-column: 1 / -1;      /* ocupa todas las columnas de la grilla */
+  width: 100%;
+  background:#f5f5f5;
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:10px 14px;
+  margin: 0 0 14px 0;       /* separa del primer row de productos */
+  font-size:14px;
+  font-weight:500;
+  color:#333;
 }
