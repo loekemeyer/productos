@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function initClientesBounce() {
   const wrap = document.getElementById("clientesBounce");
   const track = document.getElementById("clientesTrack");
-  if (!wrap || !track) return;
+  if (!wrap || !track) return; 
 
   const computeShift = () => {
     const wrapW = wrap.clientWidth;

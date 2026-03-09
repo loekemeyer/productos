@@ -15,71 +15,6 @@ function imgUrlByCod(cod) {
   return `${BASE_IMG}${encodeURIComponent(c)}.jpg?v=${encodeURIComponent(IMG_VERSION)}`;
 }
 
-// ================= CARRITO (shared con mayorista/sugerencias) =================
-const CART_LS_KEY = "lk_mayorista_cart_v1";
-
-function readCartLS() {
-  try {
-    const raw = localStorage.getItem(CART_LS_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeCartLS(arr) {
-  try {
-    localStorage.setItem(CART_LS_KEY, JSON.stringify(arr));
-  } catch {}
-}
-
-function addToCartLS(productId, qtyCajas) {
-  const pid = String(productId || "").trim();
-  const q = Math.max(1, parseInt(qtyCajas, 10) || 1);
-  if (!pid) return;
-
-  const cart = readCartLS();
-  const found = cart.find((x) => String(x.productId) === pid);
-
-  if (found)
-    found.qtyCajas = Math.max(1, (parseInt(found.qtyCajas, 10) || 0) + q);
-  else cart.push({ productId: pid, qtyCajas: q });
-
-  writeCartLS(cart);
-}
-
-// handlers globales para botones inline
-window.hDec = function (pid) {
-  const el = document.getElementById(`hqty-${pid}`);
-  if (!el) return;
-  el.value = Math.max(1, (parseInt(el.value, 10) || 1) - 1);
-};
-
-window.hInc = function (pid) {
-  const el = document.getElementById(`hqty-${pid}`);
-  if (!el) return;
-  el.value = Math.max(1, (parseInt(el.value, 10) || 1) + 1);
-};
-
-window.hAdd = function (pid) {
-  const el = document.getElementById(`hqty-${pid}`);
-  const qty = el ? parseInt(el.value, 10) || 1 : 1;
-
-  addToCartLS(pid, qty);
-
-  const btn = document.getElementById(`hadd-${pid}`);
-  if (btn) {
-    const prev = btn.textContent;
-    btn.textContent = "Agregado ✓";
-    btn.disabled = true;
-    setTimeout(() => {
-      btn.textContent = prev;
-      btn.disabled = false;
-    }, 900);
-  }
-};
-
 // helpers
 const $ = (id) => document.getElementById(id);
 const statusBox = $("status");
@@ -211,7 +146,7 @@ function renderTabla(rows) {
   thead.innerHTML = "";
   const trh = document.createElement("tr");
 
-  ["Img", "Código", "Descripción", "Total", "Pedido"].forEach((t) => {
+  ["Cod", "Descripción", "Total", "Pedido"].forEach((t) => {
     const th = document.createElement("th");
     th.innerText = t;
     trh.appendChild(th);
@@ -241,18 +176,6 @@ function renderTabla(rows) {
   for (const p of arr) {
     const tr = document.createElement("tr");
 
-    const tdImg = document.createElement("td");
-    tdImg.className = "imgcell";
-    tdImg.innerHTML = `
-  <img
-    class="h-img"
-    src="${imgUrlByCod(p.cod)}"
-    alt="${String(p.desc || "")}"
-    onerror="this.onerror=null;this.src='img/no-image.jpg'"
-  />
-`;
-    tr.appendChild(tdImg);
-
     const tdCod = document.createElement("td");
     tdCod.innerText = p.cod;
     tr.appendChild(tdCod);
@@ -274,7 +197,7 @@ function renderTabla(rows) {
       <div class="h-action">
         <div class="h-stepper">
           <button type="button" class="h-step-btn" onclick="hDec('${cod}')">−</button>
-          <input id="hqty-${cod}" class="h-step-in" type="number" min="1" value="1" />
+          <input id="hqty-${cod}" class="h-step-in" type="number" min="0" value="0" />
           <button type="button" class="h-step-btn" onclick="hInc('${cod}')">+</button>
         </div>
         <button type="button" class="h-add-btn" id="hadd-${cod}" onclick="hAdd('${cod}')">
@@ -344,18 +267,21 @@ function writePendingAdds(arr) {
 window.hDec = function (cod) {
   const el = document.getElementById(`hqty-${cod}`);
   if (!el) return;
-  el.value = Math.max(1, (parseInt(el.value, 10) || 1) - 1);
+  el.value = Math.max(0, (parseInt(el.value, 10) || 0) - 1);
 };
 
 window.hInc = function (cod) {
   const el = document.getElementById(`hqty-${cod}`);
   if (!el) return;
-  el.value = Math.max(1, (parseInt(el.value, 10) || 1) + 1);
+  el.value = Math.max(0, (parseInt(el.value, 10) || 0) + 1);
 };
 
 window.hAdd = function (cod) {
   const el = document.getElementById(`hqty-${cod}`);
-  const qty = el ? Math.max(1, parseInt(el.value, 10) || 1) : 1;
+  const qty = el ? Math.max(0, parseInt(el.value, 10) || 0) : 0;
+
+  // ✅ si está en 0, no hace nada
+  if (qty <= 0) return;
 
   const list = readPendingAdds();
   const found = list.find((x) => String(x.cod) === String(cod));

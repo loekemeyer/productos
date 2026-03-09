@@ -21,7 +21,7 @@ const SHEETS_PROXY_URL =
 /***********************
  * UI CONSTANTS
  ***********************/
-const WEB_ORDER_DISCOUNT = 0.02; // 2% siempre
+let WEB_ORDER_DISCOUNT = 0.02; // default fallback
 const BASE_IMG = `${SUPABASE_URL}/storage/v1/object/public/products-images/`;
 const IMG_VERSION = "2026-02-27-2"; // cambiá esto cuando actualices imágenes
 
@@ -63,6 +63,22 @@ function pick(obj, keys) {
   return out;
 }
 
+async function getWebOrderDiscount() {
+  try {
+    const { data, error } = await supabaseClient
+      .from("app_settings")
+      .select("value")
+      .eq("key", "web_order_discount")
+      .single();
+
+    if (error) throw error;
+    return Number(data?.value) || 0;
+  } catch (e) {
+    console.warn("No se pudo leer web_order_discount, usando default 0.02", e);
+    return 0.02;
+  }
+}
+
 /***********************
  * STATE
  ***********************/
@@ -83,6 +99,8 @@ let filterAll = true; // "Todos" ON por default
 let filterCats = new Set(); // acumulativo
 let searchTerm = ""; // buscador
 let filterNewOnly = false; // ✅ NUEVOS (desktop + mobile)
+let filterMyAssortment = false; // ✅ MI SURTIDO (18 meses)
+let myAssortmentIds = null; // Set<string> de product_id
 
 // ===== Mobile Filters (pendientes) =====
 let pendingFilterAll = true;
@@ -365,6 +383,10 @@ async function refreshAuthState() {
     isAdmin = false;
     customerProfile = null;
     deliveryChoice = { slot: "", label: "" };
+    const clienteNuevoRow = $("clienteNuevoRow");
+    const clienteNuevoInput = $("clienteNuevoInput");
+    if (clienteNuevoRow) clienteNuevoRow.style.display = "none";
+    if (clienteNuevoInput) clienteNuevoInput.value = "";
 
     if ($("loginBtn")) $("loginBtn").style.display = "inline";
     if ($("userBox")) $("userBox").style.display = "none";
@@ -384,6 +406,16 @@ async function refreshAuthState() {
     .maybeSingle();
 
   isAdmin = !!adminRow && !adminErr;
+    const clienteNuevoRow = $("clienteNuevoRow");
+  const clienteNuevoInput = $("clienteNuevoInput");
+
+  if (clienteNuevoRow) {
+    clienteNuevoRow.style.display = isAdmin ? "block" : "none";
+  }
+
+  if (clienteNuevoInput && !isAdmin) {
+    clienteNuevoInput.value = "";
+  }
 
   const { data: custRow } = await supabaseClient
     .from("customers")
@@ -1242,32 +1274,64 @@ function setSearchInputValue(val) {
 }
 
 function getFilteredProducts() {
+  let list = products.slice();
+
+  // Categorías (si no está en "Todas")
+  if (!filterAll) {
+    list = list.filter((p) => filterCats.has(String(p.category || "").trim()));
+  }
+
+  // ✅ NUEVOS (por badge_status)
+  if (filterNewOnly) {
+    list = list.filter(
+      (p) => String(p.badge_status || "").trim().toUpperCase() === "NUEVO",
+    );
+  }
+
+  // ✅ MI SURTIDO (acumulable)
+  if (filterMyAssortment) {
+    if (myAssortmentIds instanceof Set) {
+      list = list.filter((p) => myAssortmentIds.has(String(p.id)));
+    } else {
+      // todavía no cargó -> no filtramos para no vaciar la página
+    }
+  }
+
+  // Buscador (acumulable con todo)
   if (searchTerm && String(searchTerm).trim()) {
     const term = normalizeText(searchTerm);
-
-    return products.filter((p) => {
+    list = list.filter((p) => {
       const hay = [p.cod, p.description].map(normalizeText).join(" ");
       return hay.includes(term);
     });
   }
 
-  let list = products.slice();
-
-  if (!filterAll) {
-    list = list.filter((p) => filterCats.has(String(p.category || "").trim()));
-  }
-
-  // ✅ NUEVOS: mismo criterio que tu badge "NUEVO"
-  if (filterNewOnly) {
-    list = list.filter(
-      (p) =>
-        String(p.badge_status || "")
-          .trim()
-          .toUpperCase() === "NUEVO",
-    );
-  }
-
   return list;
+}
+
+async function loadMyAssortmentIds() {
+  if (!currentSession) return new Set();
+  if (!customerProfile?.cod_cliente) return new Set();
+
+  const { data, error } = await supabaseClient.rpc("get_my_assortment_18m", {
+    p_customer: String(customerProfile.cod_cliente),
+  });
+
+  if (error) {
+    console.error("RPC get_my_assortment_18m error:", error);
+    return new Set();
+  }
+
+  return new Set((data || []).map((r) => String(r.product_id)));
+}
+
+// ✅ MI SURTIDO (solo productos comprados por este cliente en 18 meses)
+if (filterMyAssortment) {
+  if (myAssortmentIds instanceof Set) {
+    list = list.filter((p) => myAssortmentIds.has(String(p.id)));
+  } else {
+    // todavía cargando → no filtramos para no “vaciar” la página
+  }
 }
 
 /***********************
@@ -1375,14 +1439,20 @@ function renderProducts() {
         Sin stock
       </button>
     `
-            : qty <= 0
+            : !logged
               ? `
-        <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
-          Agregar al pedido
+        <button class="add-btn add-login-btn" onclick="openLogin()">
+          Iniciar sesión para ver precios
         </button>
       `
-              : `
-        <div class="card-cartbar" id="qty-${pid}">
+              : qty <= 0
+                ? `
+          <button class="add-btn" id="add-${pid}" onclick="addFirstBox('${pid}')">
+            Agregar al pedido
+          </button>
+        `
+                : `
+          <div class="card-cartbar" id="qty-${pid}">
           <div class="cartbar-top">
             <div class="cartbar-label">Subtotal</div>
             <div class="cartbar-subtotal">
@@ -2062,6 +2132,7 @@ async function sendOrderToSheets({
   condicionPago,
   condicionPagoCode,
   sucursalEntrega,
+  clienteNuevo,
   items,
 }) {
   if (!SHEETS_PROXY_URL) {
@@ -2072,7 +2143,7 @@ async function sendOrderToSheets({
     throw new Error("Not logged in");
   }
 
-  const payload = {
+    const payload = {
     order_number: String(orderNumber || "").trim(),
     condicion_pago_code: Number(condicionPagoCode || 0),
 
@@ -2080,6 +2151,7 @@ async function sendOrderToSheets({
     vend: String(vend || "").trim(),
     condicion_pago: String(condicionPago || "").trim(),
     sucursal_entrega: String(sucursalEntrega || "").trim(),
+    cliente_nuevo: String(clienteNuevo || "").trim(),
 
     items: (items || []).map((it) => ({
       cod_art: String(it.cod_art || "").trim(),
@@ -2128,6 +2200,9 @@ function debugStep(txt) {
 
 async function submitOrder() {
   const btn = $("submitOrderBtn");
+    const clienteNuevoValue = isAdmin
+    ? String($("clienteNuevoInput")?.value || "").trim()
+    : "";
   try {
     setOrderStatus("");
 
@@ -2137,13 +2212,6 @@ async function submitOrder() {
 
     if (!currentSession) {
       openLogin();
-      return;
-    }
-    if (isAdmin) {
-      setOrderStatus(
-        "Modo Administrador: no se puede confirmar pedidos desde esta vista.",
-        "err",
-      );
       return;
     }
     if (!customerProfile?.id) {
@@ -2254,13 +2322,14 @@ async function submitOrder() {
     debugStep("Enviando…");
 
     try {
-      await sendOrderToSheets({
-        orderNumber: orderId, // ✅ N° Pedido
+            await sendOrderToSheets({
+        orderNumber: orderId,
         codCliente: customerProfile.cod_cliente,
         vend: customerProfile.vend,
         condicionPago: getPaymentMethodText(),
-        condicionPagoCode: getPaymentMethodCode(), // ✅ código numérico
+        condicionPagoCode: getPaymentMethodCode(),
         sucursalEntrega: deliveryChoice.label || deliveryChoice.slot,
+        clienteNuevo: clienteNuevoValue,
         items: itemsPayload.map((it) => ({
           cod_art: it.cod_art,
           cajas: it.cajas,
@@ -2358,10 +2427,59 @@ function closePassModal() {
   passModal.setAttribute("aria-hidden", "true");
 }
 
+function togglePassword(inputId, el) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  if (input.type === "password") {
+    input.type = "text";
+    el.textContent = "🙈";
+  } else {
+    input.type = "password";
+    el.textContent = "👁";
+  }
+}
+
+function togglePassword(inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input || !btnEl) return;
+
+  const isHidden = input.type === "password";
+  input.type = isHidden ? "text" : "password";
+  btnEl.setAttribute("data-show", isHidden ? "1" : "0");
+}
+
 /***********************
  * INIT (arranque de la web) — CORREGIDO ✅
  ***********************/
 document.addEventListener("DOMContentLoaded", async () => {
+
+  WEB_ORDER_DISCOUNT = await getWebOrderDiscount();
+  // ===== LOADER CONTROL (solo 1ra vez por página) =====
+  (function () {
+    const loader = document.getElementById("pageLoader");
+    if (!loader) return;
+
+    const key = `lk_loader_seen_v1:${location.pathname.split("/").pop()}`;
+
+    if (localStorage.getItem(key) === "1") {
+      loader.remove();
+      return;
+    }
+
+    const delay = 5000 + Math.random() * 5000; // 5 a 10s
+
+    setTimeout(() => {
+      loader.style.transition = "opacity 0.5s ease";
+      loader.style.opacity = "0";
+      setTimeout(() => {
+        try {
+          localStorage.setItem(key, "1");
+        } catch {}
+        loader.remove();
+      }, 500);
+    }, delay);
+  })();
   // Exponer funciones al HTML (onclick)
   // ✅ recuperar carrito guardado (si venís de sugerencias, etc.)
   const saved = loadCartFromLS();
@@ -2441,6 +2559,42 @@ document.addEventListener("DOMContentLoaded", async () => {
     syncNewFilterBtn();
     renderProducts();
   });
+
+  function syncMyAssortmentBtn() {
+  const b = $("btnFilterAssortment");
+  if (b) b.classList.toggle("on", !!filterMyAssortment);
+}
+
+// estado inicial
+syncMyAssortmentBtn();
+
+$("btnFilterAssortment")?.addEventListener("click", async () => {
+  if (!currentSession) return openLogin();
+
+  // Asegurar que el perfil esté cargado
+  if (!customerProfile?.cod_cliente) {
+    await refreshAuthState(); // tu función ya existe
+  }
+
+  filterMyAssortment = !filterMyAssortment;
+  syncMyAssortmentBtn();
+
+  if (filterMyAssortment) {
+    myAssortmentIds = await loadMyAssortmentIds();
+
+    console.log("MI SURTIDO cod_cliente:", customerProfile?.cod_cliente);
+    console.log("MI SURTIDO ids size:", myAssortmentIds?.size);
+    console.log("MI SURTIDO sample ids:", Array.from(myAssortmentIds || []).slice(0, 5));
+    console.log("PRODUCTS loaded:", products?.length, "sample product id:", products?.[0]?.id);
+  }
+
+  const banner = document.getElementById("assortmentBanner");
+if (banner) {
+  banner.style.display = filterMyAssortment ? "block" : "none";
+}
+
+  renderProducts();
+});
 
   // TOAST VER PEDIDOS
   window.addEventListener("resize", positionViewOrderToastBelowHeader);
@@ -2850,6 +3004,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Reactividad login/logout
   supabaseClient.auth.onAuthStateChange(async (_event, session) => {
     currentSession = session;
+
+    // reset surtido al cambiar sesión
+  filterMyAssortment = false;
+  myAssortmentIds = null;
+  syncMyAssortmentBtn?.();  
 
     searchTerm = "";
     const ns = $("navSearch");
