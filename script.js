@@ -443,9 +443,17 @@ async function refreshAuthState() {
 
   const note = $("customerNote");
   if (note) {
-    if (!currentSession) note.innerText = "";
-    else if (isAdmin) note.innerText = "Modo Administrador";
-    else note.innerText = "Ya está aplicado tu Dto x Volumen";
+    const dto = Number(customerProfile?.dto_vol || 0);
+  
+    if (!currentSession) {
+      note.innerText = "";
+    } else if (isAdmin) {
+      note.innerText = "Modo Administrador";
+    } else if (dto > 0) {
+      note.innerText = "Ya está aplicado tu Dto x Volumen";
+    } else {
+      note.innerText = "";
+    }
   }
 
   await loadDeliveryOptions();
@@ -1271,9 +1279,15 @@ function fillProfileSummaryUI() {
   $("pfCorreo").textContent = mail || "—";
 
   // Mostrar % (si dto_vol es 0.15 => 15)
-  $("pfDtoVol").textContent = Number.isFinite(dto)
-    ? Math.round(dto * 100)
-    : "—";
+  const dtoEl = $("pfDtoVol");
+  const dtoContainer = dtoEl?.parentElement;
+  
+  if (Number.isFinite(dto) && dto > 0) {
+    dtoEl.textContent = Math.round(dto * 100);
+    if (dtoContainer) dtoContainer.style.display = "";
+  } else {
+    if (dtoContainer) dtoContainer.style.display = "none";
+  }
 }
 
 async function openProfile() {
@@ -1387,7 +1401,7 @@ function renderProducts() {
     // ✅ Tu precio normal (se sigue usando para carrito / subtotal, no se muestra en card)
     const tuPrecio = logged ? unitYourPrice(p.list_price) : 0;
     const dtoVol = Number(customerProfile?.dto_vol || 0);
-    const showListPriceOnly = isAdmin || dtoVol === 0;
+    const showListPriceOnly = isAdmin ;
 
     const tuPrecioContado = logged
       ? showListPriceOnly
